@@ -2,6 +2,10 @@
 
 Local code review tool for AI-assisted development. Review uncommitted changes with a GitHub PR-like interface — inline comments, suggestions, questions — then approve & commit or send feedback to AI for another round.
 
+<p align="center">
+  <img src="assets/preview.gif" alt="Local Code Review demo" width="800">
+</p>
+
 ## Why?
 
 When developing with AI (vibe-coding), AI makes many changes at once. There's no good way to review those changes and give structured feedback before committing. Diff tools show changes but don't let you write comments. Chat interfaces take one comment at a time. This tool gives you the full PR review experience locally:
