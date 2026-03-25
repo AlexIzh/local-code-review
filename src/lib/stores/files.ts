@@ -1,0 +1,117 @@
+import { writable, derived } from 'svelte/store';
+import type { FileChange, DiffFile } from '$lib/types/index.ts';
+import { checkOutdated } from './review.ts';
+
+export type DiffMode = 'full' | 'unstaged';
+
+export const files = writable<FileChange[]>([]);
+export const selectedFile = writable<string | null>(null);
+export const diffFiles = writable<DiffFile[]>([]);
+export const loading = writable(false);
+export const diffMode = writable<DiffMode>('full');
+
+export const selectedDiff = derived([diffFiles, selectedFile], ([$diffFiles, $selectedFile]) => {
+	if (!$selectedFile) return null;
+	return $diffFiles.find((f) => f.path === $selectedFile) || null;
+});
+
+export const fileCommentCounts = writable<Record<string, number>>({});
+
+export const approvedCount = derived(files, ($files) => {
+	const approved = $files.filter((f) => f.approved).length;
+	return { approved, total: $files.length };
+});
+
+export const diffStats = derived(files, ($files) => {
+	let additions = 0;
+	let deletions = 0;
+	let unapprovedAdditions = 0;
+	let unapprovedDeletions = 0;
+	for (const f of $files) {
+		additions += f.additions;
+		deletions += f.deletions;
+		if (!f.approved) {
+			unapprovedAdditions += f.additions;
+			unapprovedDeletions += f.deletions;
+		}
+	}
+	return { additions, deletions, unapprovedAdditions, unapprovedDeletions };
+});
+
+export const selectedFileData = derived([files, selectedFile], ([$files, $selectedFile]) => {
+	if (!$selectedFile) return null;
+	return $files.find((f) => f.path === $selectedFile) || null;
+});
+
+export async function loadFiles() {
+	loading.set(true);
+	try {
+		const res = await fetch('/api/files');
+		const data = await res.json();
+		files.set(data);
+
+		// Auto-select first file
+		if (data.length > 0) {
+			const current = await new Promise<string | null>((resolve) => {
+				selectedFile.subscribe((v) => resolve(v))();
+			});
+			if (!current) {
+				selectedFile.set(data[0].path);
+			}
+		}
+	} finally {
+		loading.set(false);
+	}
+}
+
+export async function loadAllDiffs(mode?: DiffMode) {
+	const currentMode = mode || await new Promise<DiffMode>((resolve) => {
+		diffMode.subscribe((v) => resolve(v))();
+	});
+	const res = await fetch(`/api/diff?mode=${currentMode}`);
+	const data = await res.json();
+	if (data.files) {
+		diffFiles.set(data.files);
+	}
+	// Check if any comment threads are outdated after refreshing diff
+	checkOutdated().catch(() => {});
+}
+
+export async function approveFile(path: string) {
+	const res = await fetch('/api/files', {
+		method: 'POST',
+		headers: { 'Content-Type': 'application/json' },
+		body: JSON.stringify({ path, action: 'approve' })
+	});
+	const data = await res.json();
+	if (Array.isArray(data)) {
+		files.set(data);
+		// Reload diffs since staging changed
+		await loadAllDiffs();
+	}
+}
+
+export async function unapproveFile(path: string) {
+	const res = await fetch('/api/files', {
+		method: 'POST',
+		headers: { 'Content-Type': 'application/json' },
+		body: JSON.stringify({ path, action: 'unapprove' })
+	});
+	const data = await res.json();
+	if (Array.isArray(data)) {
+		files.set(data);
+		await loadAllDiffs();
+	}
+}
+
+export async function toggleApproval(path: string) {
+	const currentFiles = await new Promise<FileChange[]>((resolve) => {
+		files.subscribe((v) => resolve(v))();
+	});
+	const file = currentFiles.find((f) => f.path === path);
+	if (file?.approved) {
+		await unapproveFile(path);
+	} else {
+		await approveFile(path);
+	}
+}
