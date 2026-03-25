@@ -1,5 +1,74 @@
 @import 'tailwindcss';
 
+/* Theme design tokens */
+:root,
+[data-theme="dark"] {
+	--t-surface: #18181b;
+	--t-panel: #27272a;
+	--t-hover: #3f3f46;
+	--t-active: #52525b;
+	--t-text: #e4e4e7;
+	--t-text-2: #d4d4d8;
+	--t-text-3: #a1a1aa;
+	--t-text-muted: #71717a;
+	--t-text-faint: #52525b;
+	--t-border: #3f3f46;
+	--t-border-strong: #52525b;
+	--t-accent-green: #4ade80;
+	--t-accent-red: #f87171;
+	--t-accent-blue: #60a5fa;
+	--t-accent-yellow: #facc15;
+	--t-diff-add: rgba(5, 46, 22, 0.4);
+	--t-diff-del: rgba(69, 10, 10, 0.4);
+	--t-scrollbar: #52525b;
+	--t-scrollbar-hover: #71717a;
+	--t-terminal-bg: #1e1e1e;
+}
+
+[data-theme="light"] {
+	--t-surface: #ffffff;
+	--t-panel: #f4f4f5;
+	--t-hover: #e4e4e7;
+	--t-active: #d4d4d8;
+	--t-text: #18181b;
+	--t-text-2: #27272a;
+	--t-text-3: #52525b;
+	--t-text-muted: #71717a;
+	--t-text-faint: #a1a1aa;
+	--t-border: #e4e4e7;
+	--t-border-strong: #d4d4d8;
+	--t-accent-green: #16a34a;
+	--t-accent-red: #dc2626;
+	--t-accent-blue: #2563eb;
+	--t-accent-yellow: #ca8a04;
+	--t-diff-add: #dcfce7;
+	--t-diff-del: #fee2e2;
+	--t-scrollbar: #d4d4d8;
+	--t-scrollbar-hover: #a1a1aa;
+	--t-terminal-bg: #f8f8f8;
+}
+
+@theme {
+	--color-surface: var(--t-surface);
+	--color-panel: var(--t-panel);
+	--color-hover: var(--t-hover);
+	--color-active: var(--t-active);
+	--color-primary: var(--t-text);
+	--color-secondary: var(--t-text-2);
+	--color-tertiary: var(--t-text-3);
+	--color-muted: var(--t-text-muted);
+	--color-faint: var(--t-text-faint);
+	--color-border: var(--t-border);
+	--color-border-strong: var(--t-border-strong);
+	--color-accent-green: var(--t-accent-green);
+	--color-accent-red: var(--t-accent-red);
+	--color-accent-blue: var(--t-accent-blue);
+	--color-accent-yellow: var(--t-accent-yellow);
+	--color-diff-add: var(--t-diff-add);
+	--color-diff-del: var(--t-diff-del);
+	--color-terminal: var(--t-terminal-bg);
+}
+
 html, body {
 	margin: 0;
 	padding: 0;
@@ -18,10 +87,14 @@ html, body {
 }
 
 ::-webkit-scrollbar-thumb {
-	background: #52525b;
+	background: var(--t-scrollbar);
 	border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-	background: #71717a;
+	background: var(--t-scrollbar-hover);
 }
+
+/* Syntax highlighting dual theme */
+.st { color: var(--sd); }
+[data-theme="light"] .st { color: var(--sl); }

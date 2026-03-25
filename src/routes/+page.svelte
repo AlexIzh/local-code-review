@@ -59,7 +59,7 @@
 	<div class="flex-1 flex overflow-hidden">
 		<!-- Sidebar -->
 		{#if $sidebarOpen}
-			<aside class="w-72 shrink-0 bg-zinc-800/50 border-r border-zinc-700 overflow-hidden flex flex-col">
+			<aside class="w-72 shrink-0 bg-panel/50 border-r border-border overflow-hidden flex flex-col">
 				<FileTree />
 			</aside>
 		{/if}
@@ -67,32 +67,32 @@
 		<!-- Main diff area -->
 		<main class="flex-1 overflow-y-auto">
 			{#if loading}
-				<div class="flex items-center justify-center h-full text-zinc-500">
+				<div class="flex items-center justify-center h-full text-muted">
 					<div class="text-center">
 						<div class="text-2xl mb-2 animate-pulse">⏳</div>
 						<p class="text-sm">Loading changes...</p>
 					</div>
 				</div>
 			{:else if error}
-				<div class="flex items-center justify-center h-full text-red-400">
+				<div class="flex items-center justify-center h-full text-accent-red">
 					<div class="text-center max-w-md">
 						<div class="text-2xl mb-2">⚠️</div>
 						<p class="text-sm">{error}</p>
 					</div>
 				</div>
 			{:else if $files.length === 0}
-				<div class="flex items-center justify-center h-full text-zinc-500">
+				<div class="flex items-center justify-center h-full text-muted">
 					<div class="text-center">
 						<div class="text-4xl mb-3">✨</div>
-						<p class="font-medium text-zinc-300">No uncommitted changes</p>
+						<p class="font-medium text-secondary">No uncommitted changes</p>
 						<p class="text-sm mt-1">Make some changes and come back to review them</p>
 					</div>
 				</div>
 			{:else if $selectedDiff}
 				<!-- File header -->
-				<div class="sticky top-0 z-10 bg-zinc-900/95 backdrop-blur border-b border-zinc-700 px-4 py-2 flex items-center gap-2">
+				<div class="sticky top-0 z-10 bg-surface/95 backdrop-blur border-b border-border px-4 py-2 flex items-center gap-2">
 					<button
-						class="shrink-0 w-5 h-5 rounded border flex items-center justify-center transition-colors {$selectedFileData?.approved ? 'bg-green-600 border-green-600 text-white' : 'border-zinc-500 hover:border-green-400 text-transparent hover:text-green-400'}"
+						class="shrink-0 w-5 h-5 rounded border flex items-center justify-center transition-colors {$selectedFileData?.approved ? 'bg-green-600 border-green-600 text-white' : 'border-border-strong hover:border-accent-green text-transparent hover:text-accent-green'}"
 						onclick={() => toggleApproval($selectedDiff!.path)}
 						title={$selectedFileData?.approved ? 'Unapprove file' : 'Approve file'}
 					>
@@ -100,25 +100,25 @@
 							<path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
 						</svg>
 					</button>
-					<span class="font-mono text-sm text-zinc-200">{$selectedDiff.path}</span>
-					<span class="text-xs text-zinc-500">({$selectedDiff.language})</span>
+					<span class="font-mono text-sm text-primary">{$selectedDiff.path}</span>
+					<span class="text-xs text-muted">({$selectedDiff.language})</span>
 					{#if $selectedFileData}
 						<span class="text-xs tabular-nums">
 							{#if $selectedFileData.additions > 0}
-								<span class="text-green-400">+{$selectedFileData.additions}</span>
+								<span class="text-accent-green">+{$selectedFileData.additions}</span>
 							{/if}
 							{#if $selectedFileData.deletions > 0}
-								<span class="text-red-400 ml-1">-{$selectedFileData.deletions}</span>
+								<span class="text-accent-red ml-1">-{$selectedFileData.deletions}</span>
 							{/if}
 						</span>
 					{/if}
 					{#if $selectedFileData?.approved}
-						<span class="text-xs px-2 py-0.5 rounded-full bg-green-500/20 text-green-400">Approved</span>
+						<span class="text-xs px-2 py-0.5 rounded-full bg-accent-green/20 text-accent-green">Approved</span>
 					{/if}
 				</div>
 				<DiffView file={$selectedDiff} />
 			{:else}
-				<div class="flex items-center justify-center h-full text-zinc-500">
+				<div class="flex items-center justify-center h-full text-muted">
 					<p class="text-sm">Select a file from the sidebar</p>
 				</div>
 			{/if}

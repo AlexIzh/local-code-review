@@ -51,12 +51,12 @@
 	}
 </script>
 
-<div class="bg-zinc-800 border border-zinc-600 rounded-lg p-3 my-1 mx-2">
+<div class="bg-panel border border-border-strong rounded-lg p-3 my-1 mx-2">
 	<div class="flex gap-1 mb-2">
 		{#each ['comment', 'suggestion', 'question'] as type}
 			{@const active = commentType === type}
 			<button
-				class="text-xs px-2 py-1 rounded transition-colors {active ? 'bg-zinc-600 text-white' : 'text-zinc-400 hover:text-zinc-300 hover:bg-zinc-700'}"
+				class="text-xs px-2 py-1 rounded transition-colors {active ? 'bg-active text-primary' : 'text-tertiary hover:text-secondary hover:bg-hover'}"
 				onclick={() => (commentType = type as typeof commentType)}
 			>
 				{type === 'comment' ? '💬' : type === 'suggestion' ? '💡' : '❓'}
@@ -69,16 +69,16 @@
 		bind:value={text}
 		onkeydown={handleKeydown}
 		placeholder="Leave a {commentType}..."
-		class="w-full bg-zinc-900 text-zinc-200 border border-zinc-600 rounded px-3 py-2 text-sm resize-y min-h-[80px] focus:outline-none focus:border-blue-500 placeholder:text-zinc-500"
+		class="w-full bg-surface text-primary border border-border-strong rounded px-3 py-2 text-sm resize-y min-h-[80px] focus:outline-none focus:border-blue-500 placeholder:text-muted"
 		rows="3"
 	></textarea>
 	<div class="flex items-center justify-between mt-2">
-		<span class="text-xs text-zinc-500">
+		<span class="text-xs text-muted">
 			{navigator?.platform?.includes('Mac') ? '⌘' : 'Ctrl'}+Enter to submit
 		</span>
 		<div class="flex gap-2">
 			<button
-				class="text-xs px-3 py-1.5 rounded text-zinc-400 hover:text-zinc-200 hover:bg-zinc-700 transition-colors"
+				class="text-xs px-3 py-1.5 rounded text-tertiary hover:text-primary hover:bg-hover transition-colors"
 				onclick={cancel}
 			>
 				Cancel

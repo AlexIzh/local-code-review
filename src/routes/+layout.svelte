@@ -8,6 +8,6 @@
 	<title>Local Code Review</title>
 </svelte:head>
 
-<div class="h-screen w-screen overflow-hidden bg-zinc-900 text-zinc-200">
+<div class="h-screen w-screen overflow-hidden bg-surface text-primary">
 	{@render children()}
 </div>

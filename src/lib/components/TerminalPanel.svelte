@@ -7,6 +7,7 @@
 		restartSession,
 		hasPendingReview
 	} from '$lib/stores/terminal.ts';
+	import { theme } from '$lib/stores/ui.ts';
 	import { onDestroy } from 'svelte';
 
 	let isResizing = $state(false);
@@ -18,6 +19,60 @@
 	let fitAddon: any = null;
 	let ws: WebSocket | null = null;
 	let resizeObserver: ResizeObserver | null = null;
+
+	const terminalThemes: Record<string, Record<string, string>> = {
+		dark: {
+			background: '#1e1e1e',
+			foreground: '#d4d4d4',
+			cursor: '#d4d4d4',
+			selectionBackground: '#264f78',
+			black: '#1e1e1e',
+			red: '#f44747',
+			green: '#6a9955',
+			yellow: '#d7ba7d',
+			blue: '#569cd6',
+			magenta: '#c586c0',
+			cyan: '#4ec9b0',
+			white: '#d4d4d4',
+			brightBlack: '#808080',
+			brightRed: '#f44747',
+			brightGreen: '#6a9955',
+			brightYellow: '#d7ba7d',
+			brightBlue: '#569cd6',
+			brightMagenta: '#c586c0',
+			brightCyan: '#4ec9b0',
+			brightWhite: '#ffffff'
+		},
+		light: {
+			background: '#f8f8f8',
+			foreground: '#383a42',
+			cursor: '#383a42',
+			selectionBackground: '#add6ff',
+			black: '#383a42',
+			red: '#e45649',
+			green: '#50a14f',
+			yellow: '#c18401',
+			blue: '#4078f2',
+			magenta: '#a626a4',
+			cyan: '#0184bc',
+			white: '#fafafa',
+			brightBlack: '#a0a1a7',
+			brightRed: '#e45649',
+			brightGreen: '#50a14f',
+			brightYellow: '#c18401',
+			brightBlue: '#4078f2',
+			brightMagenta: '#a626a4',
+			brightCyan: '#0184bc',
+			brightWhite: '#ffffff'
+		}
+	};
+
+	// React to theme changes
+	$effect(() => {
+		if (term) {
+			term.options.theme = terminalThemes[$theme];
+		}
+	});
 
 	onDestroy(() => {
 		resizeObserver?.disconnect();
@@ -50,28 +105,7 @@
 				cursorBlink: true,
 				fontSize: 13,
 				fontFamily: 'Menlo, Monaco, "Courier New", monospace',
-				theme: {
-					background: '#1e1e1e',
-					foreground: '#d4d4d4',
-					cursor: '#d4d4d4',
-					selectionBackground: '#264f78',
-					black: '#1e1e1e',
-					red: '#f44747',
-					green: '#6a9955',
-					yellow: '#d7ba7d',
-					blue: '#569cd6',
-					magenta: '#c586c0',
-					cyan: '#4ec9b0',
-					white: '#d4d4d4',
-					brightBlack: '#808080',
-					brightRed: '#f44747',
-					brightGreen: '#6a9955',
-					brightYellow: '#d7ba7d',
-					brightBlue: '#569cd6',
-					brightMagenta: '#c586c0',
-					brightCyan: '#4ec9b0',
-					brightWhite: '#ffffff'
-				},
+				theme: terminalThemes[$theme],
 				allowProposedApi: true
 			});
 
@@ -192,7 +226,7 @@
 
 {#if $terminalOpen}
 	<div
-		class="flex flex-col border-t border-zinc-700 bg-[#1e1e1e]"
+		class="flex flex-col border-t border-border bg-terminal"
 		style="height: {minimized ? 'auto' : `${$terminalHeight}px`}"
 	>
 		{#if !minimized}
@@ -203,12 +237,12 @@
 			></div>
 		{/if}
 
-		<div class="flex items-center gap-2 px-3 py-1.5 bg-zinc-900 border-b border-zinc-700/50 select-none shrink-0">
+		<div class="flex items-center gap-2 px-3 py-1.5 bg-surface border-b border-border/50 select-none shrink-0">
 			<div class="flex items-center gap-2">
-				<span class="text-xs font-medium text-zinc-300">Claude Terminal</span>
+				<span class="text-xs font-medium text-secondary">Claude Terminal</span>
 				<span class="flex items-center gap-1">
-					<span class="w-2 h-2 rounded-full {connected ? 'bg-green-400' : 'bg-zinc-500'}"></span>
-					<span class="text-[10px] text-zinc-500">{connected ? 'Connected' : 'Disconnected'}</span>
+					<span class="w-2 h-2 rounded-full {connected ? 'bg-green-400' : 'bg-muted'}"></span>
+					<span class="text-[10px] text-muted">{connected ? 'Connected' : 'Disconnected'}</span>
 				</span>
 			</div>
 
@@ -217,7 +251,7 @@
 			<div class="flex items-center gap-1">
 				<button
 					onclick={sendReviewToClaude}
-					class="text-[10px] px-2 py-0.5 rounded text-blue-400 hover:bg-blue-400/10 transition-colors"
+					class="text-[10px] px-2 py-0.5 rounded text-accent-blue hover:bg-accent-blue/10 transition-colors"
 					title="Send current review comments to Claude"
 				>
 					Send Review
@@ -225,35 +259,35 @@
 
 				<button
 					onclick={stopClaudeSession}
-					class="text-[10px] px-2 py-0.5 rounded text-red-400 hover:bg-red-400/10 transition-colors"
+					class="text-[10px] px-2 py-0.5 rounded text-accent-red hover:bg-accent-red/10 transition-colors"
 				>
 					Stop
 				</button>
 
 				<button
 					onclick={restartSession}
-					class="text-[10px] px-2 py-0.5 rounded text-zinc-400 hover:bg-zinc-700 transition-colors"
+					class="text-[10px] px-2 py-0.5 rounded text-tertiary hover:bg-hover transition-colors"
 				>
 					Restart
 				</button>
 
 				<button
 					onclick={() => term?.clear()}
-					class="text-[10px] px-2 py-0.5 rounded text-zinc-400 hover:bg-zinc-700 transition-colors"
+					class="text-[10px] px-2 py-0.5 rounded text-tertiary hover:bg-hover transition-colors"
 				>
 					Clear
 				</button>
 
 				<button
 					onclick={() => minimized = !minimized}
-					class="text-[10px] px-2 py-0.5 rounded text-zinc-400 hover:bg-zinc-700 transition-colors"
+					class="text-[10px] px-2 py-0.5 rounded text-tertiary hover:bg-hover transition-colors"
 				>
 					{minimized ? 'Expand' : 'Minimize'}
 				</button>
 
 				<button
 					onclick={() => $terminalOpen = false}
-					class="text-[10px] px-2 py-0.5 rounded text-zinc-400 hover:bg-zinc-700 transition-colors"
+					class="text-[10px] px-2 py-0.5 rounded text-tertiary hover:bg-hover transition-colors"
 				>
 					Close
 				</button>
@@ -266,7 +300,7 @@
 				class="flex-1 overflow-hidden"
 			></div>
 			{#if initError}
-				<div class="p-3 text-red-400 text-xs">{initError}</div>
+				<div class="p-3 text-accent-red text-xs">{initError}</div>
 			{/if}
 		{/if}
 	</div>

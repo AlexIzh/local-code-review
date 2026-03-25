@@ -2,10 +2,10 @@
 	import { files, selectedFile, fileCommentCounts, toggleApproval } from '$lib/stores/files.ts';
 
 	const statusColors: Record<string, string> = {
-		added: 'text-green-400',
-		modified: 'text-yellow-400',
-		deleted: 'text-red-400',
-		renamed: 'text-blue-400'
+		added: 'text-accent-green',
+		modified: 'text-accent-yellow',
+		deleted: 'text-accent-red',
+		renamed: 'text-accent-blue'
 	};
 
 	const statusLabels: Record<string, string> = {
@@ -36,7 +36,7 @@
 </script>
 
 <div class="h-full overflow-y-auto">
-	<div class="px-3 py-2 text-xs font-semibold text-zinc-400 uppercase tracking-wider">
+	<div class="px-3 py-2 text-xs font-semibold text-tertiary uppercase tracking-wider">
 		Changed Files ({$files.length})
 	</div>
 	<div class="space-y-px">
@@ -46,12 +46,12 @@
 			<!-- svelte-ignore a11y_click_events_have_key_events -->
 			<!-- svelte-ignore a11y_no_static_element_interactions -->
 			<div
-				class="w-full text-left px-3 py-1.5 flex items-center gap-2 text-sm hover:bg-zinc-700/50 transition-colors cursor-pointer {isSelected ? 'bg-zinc-700/80 text-white' : 'text-zinc-300'} {file.approved ? 'opacity-60' : ''}"
+				class="w-full text-left px-3 py-1.5 flex items-center gap-2 text-sm hover:bg-hover/50 transition-colors cursor-pointer {isSelected ? 'bg-hover/80 text-primary' : 'text-secondary'} {file.approved ? 'opacity-60' : ''}"
 				onclick={() => selectFile(file.path)}
 			>
 				<!-- Approve checkbox -->
 				<button
-					class="shrink-0 w-4 h-4 rounded border flex items-center justify-center transition-colors {file.approved ? 'bg-green-600 border-green-600 text-white' : 'border-zinc-500 hover:border-green-400 text-transparent hover:text-green-400'}"
+					class="shrink-0 w-4 h-4 rounded border flex items-center justify-center transition-colors {file.approved ? 'bg-green-600 border-green-600 text-white' : 'border-border-strong hover:border-accent-green text-transparent hover:text-accent-green'}"
 					onclick={(e) => handleApprove(e, file.path)}
 					title={file.approved ? 'Unapprove file' : 'Approve file'}
 				>
@@ -63,22 +63,22 @@
 				<span class="font-mono text-xs font-bold w-4 text-center {statusColors[file.status]}">
 					{statusLabels[file.status]}
 				</span>
-				<span class="truncate flex-1 {file.approved ? 'line-through decoration-zinc-500' : ''}">
+				<span class="truncate flex-1 {file.approved ? 'line-through decoration-muted' : ''}">
 					{#if getDirectory(file.path)}
-						<span class="text-zinc-500">{getDirectory(file.path)}/</span>
+						<span class="text-muted">{getDirectory(file.path)}/</span>
 					{/if}
 					<span class="font-medium">{getFilename(file.path)}</span>
 				</span>
-				<span class="text-xs text-zinc-500 tabular-nums shrink-0">
+				<span class="text-xs text-muted tabular-nums shrink-0">
 					{#if file.additions > 0}
-						<span class="text-green-400">+{file.additions}</span>
+						<span class="text-accent-green">+{file.additions}</span>
 					{/if}
 					{#if file.deletions > 0}
-						<span class="text-red-400">-{file.deletions}</span>
+						<span class="text-accent-red">-{file.deletions}</span>
 					{/if}
 				</span>
 				{#if commentCount > 0}
-					<span class="bg-blue-500/20 text-blue-400 text-xs px-1.5 py-0.5 rounded-full font-medium">
+					<span class="bg-accent-blue/20 text-accent-blue text-xs px-1.5 py-0.5 rounded-full font-medium">
 						{commentCount}
 					</span>
 				{/if}

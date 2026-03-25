@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { viewMode, showCommitDialog, showExportDialog } from '$lib/stores/ui.ts';
+	import { viewMode, showCommitDialog, showExportDialog, theme } from '$lib/stores/ui.ts';
 	import { stats, reviewStatus, submitReview } from '$lib/stores/review.ts';
 	import { diffMode, approvedCount, diffStats, loadAllDiffs } from '$lib/stores/files.ts';
 
@@ -21,19 +21,19 @@
 	}
 </script>
 
-<header class="bg-zinc-800 border-b border-zinc-700 px-4 py-2 flex items-center gap-3">
-	<h1 class="text-sm font-semibold text-zinc-200 mr-4">Local Code Review</h1>
+<header class="bg-panel border-b border-border px-4 py-2 flex items-center gap-3">
+	<h1 class="text-sm font-semibold text-primary mr-4">Local Code Review</h1>
 
 	<!-- View mode toggle -->
-	<div class="flex bg-zinc-900 rounded overflow-hidden border border-zinc-700">
+	<div class="flex bg-surface rounded overflow-hidden border border-border">
 		<button
-			class="text-xs px-3 py-1 transition-colors {$viewMode === 'unified' ? 'bg-zinc-600 text-white' : 'text-zinc-400 hover:text-zinc-200'}"
+			class="text-xs px-3 py-1 transition-colors {$viewMode === 'unified' ? 'bg-active text-white' : 'text-tertiary hover:text-primary'}"
 			onclick={() => ($viewMode = 'unified')}
 		>
 			Unified
 		</button>
 		<button
-			class="text-xs px-3 py-1 transition-colors {$viewMode === 'split' ? 'bg-zinc-600 text-white' : 'text-zinc-400 hover:text-zinc-200'}"
+			class="text-xs px-3 py-1 transition-colors {$viewMode === 'split' ? 'bg-active text-white' : 'text-tertiary hover:text-primary'}"
 			onclick={() => ($viewMode = 'split')}
 		>
 			Split
@@ -41,15 +41,15 @@
 	</div>
 
 	<!-- Diff mode toggle -->
-	<div class="flex bg-zinc-900 rounded overflow-hidden border border-zinc-700">
+	<div class="flex bg-surface rounded overflow-hidden border border-border">
 		<button
-			class="text-xs px-3 py-1 transition-colors {$diffMode === 'full' ? 'bg-zinc-600 text-white' : 'text-zinc-400 hover:text-zinc-200'}"
+			class="text-xs px-3 py-1 transition-colors {$diffMode === 'full' ? 'bg-active text-white' : 'text-tertiary hover:text-primary'}"
 			onclick={() => setDiffMode('full')}
 		>
 			Full Diff
 		</button>
 		<button
-			class="text-xs px-3 py-1 transition-colors {$diffMode === 'unstaged' ? 'bg-zinc-600 text-white' : 'text-zinc-400 hover:text-zinc-200'}"
+			class="text-xs px-3 py-1 transition-colors {$diffMode === 'unstaged' ? 'bg-active text-white' : 'text-tertiary hover:text-primary'}"
 			onclick={() => setDiffMode('unstaged')}
 		>
 			Needs Review
@@ -60,14 +60,14 @@
 
 	<!-- Diff stats -->
 	{#if $approvedCount.total > 0}
-		<span class="text-xs text-zinc-400 flex items-center gap-2">
-			<span><span class="text-green-400">{$approvedCount.approved}</span>/{$approvedCount.total} approved</span>
-			<span class="text-zinc-600">|</span>
-			<span class="text-green-400">+{$diffStats.additions}</span>
-			<span class="text-red-400">-{$diffStats.deletions}</span>
+		<span class="text-xs text-tertiary flex items-center gap-2">
+			<span><span class="text-accent-green">{$approvedCount.approved}</span>/{$approvedCount.total} approved</span>
+			<span class="text-faint">|</span>
+			<span class="text-accent-green">+{$diffStats.additions}</span>
+			<span class="text-accent-red">-{$diffStats.deletions}</span>
 			{#if $diffStats.unapprovedAdditions > 0 || $diffStats.unapprovedDeletions > 0}
-				<span class="text-zinc-600">|</span>
-				<span class="text-yellow-400">
+				<span class="text-faint">|</span>
+				<span class="text-accent-yellow">
 					{$diffStats.unapprovedAdditions + $diffStats.unapprovedDeletions} lines to review
 				</span>
 			{/if}
@@ -76,10 +76,10 @@
 
 	<!-- Stats -->
 	{#if $stats.totalComments > 0}
-		<span class="text-xs text-zinc-400">
+		<span class="text-xs text-tertiary">
 			{$stats.totalComments} comment{$stats.totalComments !== 1 ? 's' : ''}
 			{#if $stats.unresolvedThreads > 0}
-				<span class="text-yellow-400">({$stats.unresolvedThreads} unresolved)</span>
+				<span class="text-accent-yellow">({$stats.unresolvedThreads} unresolved)</span>
 			{/if}
 		</span>
 	{/if}
@@ -87,15 +87,24 @@
 	<!-- Status badge -->
 	{#if $reviewStatus !== 'pending'}
 		<span
-			class="text-xs px-2 py-0.5 rounded-full {$reviewStatus === 'approved' ? 'bg-green-500/20 text-green-400' : 'bg-yellow-500/20 text-yellow-400'}"
+			class="text-xs px-2 py-0.5 rounded-full {$reviewStatus === 'approved' ? 'bg-accent-green/20 text-accent-green' : 'bg-accent-yellow/20 text-accent-yellow'}"
 		>
 			{$reviewStatus === 'approved' ? 'Approved' : 'Changes Requested'}
 		</span>
 	{/if}
 
+	<!-- Theme toggle -->
+	<button
+		class="text-xs px-2 py-1.5 rounded border border-border-strong text-tertiary hover:text-primary hover:bg-hover transition-colors"
+		onclick={() => theme.toggle()}
+		title="Toggle theme"
+	>
+		{$theme === 'dark' ? '☀️' : '🌙'}
+	</button>
+
 	<!-- Export button -->
 	<button
-		class="text-xs px-3 py-1.5 rounded border border-zinc-600 text-zinc-300 hover:bg-zinc-700 transition-colors"
+		class="text-xs px-3 py-1.5 rounded border border-border-strong text-secondary hover:bg-hover transition-colors"
 		onclick={() => ($showExportDialog = true)}
 	>
 		Export
@@ -117,18 +126,18 @@
 				class="fixed inset-0 z-10"
 				onclick={() => (showReviewMenu = false)}
 			></div>
-			<div class="absolute right-0 top-full mt-1 bg-zinc-800 border border-zinc-600 rounded-lg shadow-xl z-20 py-1 min-w-[220px]">
+			<div class="absolute right-0 top-full mt-1 bg-panel border border-border-strong rounded-lg shadow-xl z-20 py-1 min-w-[220px]">
 				<button
-					class="w-full text-left px-3 py-2 text-sm text-zinc-300 hover:bg-zinc-700 transition-colors"
+					class="w-full text-left px-3 py-2 text-sm text-secondary hover:bg-hover transition-colors"
 					onclick={() => { handleRequestChanges(); showReviewMenu = false; }}
 				>
-					<span class="text-yellow-400 mr-2">↻</span> Request Changes (send to AI)
+					<span class="text-accent-yellow mr-2">↻</span> Request Changes (send to AI)
 				</button>
 				<button
-					class="w-full text-left px-3 py-2 text-sm text-zinc-300 hover:bg-zinc-700 transition-colors"
+					class="w-full text-left px-3 py-2 text-sm text-secondary hover:bg-hover transition-colors"
 					onclick={() => { handleApprove(); showReviewMenu = false; }}
 				>
-					<span class="text-green-400 mr-2">✓</span> Approve & Commit
+					<span class="text-accent-green mr-2">✓</span> Approve & Commit
 				</button>
 			</div>
 		{/if}

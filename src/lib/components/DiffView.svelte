@@ -40,8 +40,8 @@
 	}
 
 	function lineBg(type: string): string {
-		if (type === 'add') return 'bg-green-950/40';
-		if (type === 'del') return 'bg-red-950/40';
+		if (type === 'add') return 'bg-diff-add';
+		if (type === 'del') return 'bg-diff-del';
 		return '';
 	}
 
@@ -156,10 +156,10 @@
 
 		<!-- Hunk header — hidden when merged with previous hunk -->
 		{#if shouldShowHeader(hunkIndex)}
-			<div class="bg-zinc-800 text-zinc-500 text-xs border-y border-zinc-700 select-none flex items-center">
+			<div class="bg-panel text-muted text-xs border-y border-border select-none flex items-center">
 				{#if canExpandBefore(hunkIndex)}
 					<button
-						class="text-blue-400 hover:text-blue-300 hover:bg-zinc-700 transition-colors px-3 py-1"
+						class="text-accent-blue hover:opacity-75 hover:bg-hover transition-colors px-3 py-1"
 						onclick={() => expandBefore(hunkIndex)}
 						title="Show {EXPAND_COUNT} more lines above"
 					>
@@ -176,10 +176,10 @@
 			<!-- Expanded lines before hunk -->
 			{#each beforeLines as line}
 				{@const lineNum = line.newNumber || line.oldNumber || 0}
-				<div class="diff-line group flex hover:bg-zinc-700/20 relative">
-					<button class="absolute left-0 top-0 w-5 h-full flex items-center justify-center opacity-0 group-hover:opacity-100 text-blue-400 hover:text-blue-300 z-10 transition-opacity" onclick={() => startComment(lineNum, 'new', line.content)} title="Add comment">+</button>
-					<span class="w-12 shrink-0 text-right pr-2 text-zinc-600 select-none text-xs leading-6 pl-5">{line.oldNumber ?? ''}</span>
-					<span class="w-12 shrink-0 text-right pr-2 text-zinc-600 select-none text-xs leading-6 border-r border-zinc-700">{line.newNumber ?? ''}</span>
+				<div class="diff-line group flex hover:bg-hover/20 relative">
+					<button class="absolute left-0 top-0 w-5 h-full flex items-center justify-center opacity-0 group-hover:opacity-100 text-accent-blue z-10 transition-opacity" onclick={() => startComment(lineNum, 'new', line.content)} title="Add comment">+</button>
+					<span class="w-12 shrink-0 text-right pr-2 text-faint select-none text-xs leading-6 pl-5">{line.oldNumber ?? ''}</span>
+					<span class="w-12 shrink-0 text-right pr-2 text-faint select-none text-xs leading-6 border-r border-border">{line.newNumber ?? ''}</span>
 					<span class="w-6 shrink-0 text-center select-none leading-6"> </span>
 					<span class="flex-1 whitespace-pre-wrap break-all leading-6 pr-4">{#if line.html}{@html line.html}{:else}{line.content || ' '}{/if}</span>
 				</div>
@@ -190,11 +190,11 @@
 				{@const lineNum = getLineKey(line)}
 				{@const side = getLineSide(line)}
 				{@const lineThreads = getThreadsForLine(lineNum, side)}
-				<div class="diff-line group flex hover:bg-zinc-700/20 relative {lineBg(line.type)}">
-					<button class="absolute left-0 top-0 w-5 h-full flex items-center justify-center opacity-0 group-hover:opacity-100 text-blue-400 hover:text-blue-300 z-10 transition-opacity" onclick={() => startComment(lineNum, side, line.content)} title="Add comment">+</button>
-					<span class="w-12 shrink-0 text-right pr-2 text-zinc-600 select-none text-xs leading-6 pl-5">{line.oldNumber ?? ''}</span>
-					<span class="w-12 shrink-0 text-right pr-2 text-zinc-600 select-none text-xs leading-6 border-r border-zinc-700">{line.newNumber ?? ''}</span>
-					<span class="w-6 shrink-0 text-center select-none leading-6 {line.type === 'add' ? 'text-green-400' : line.type === 'del' ? 'text-red-400' : ''}">{line.type === 'add' ? '+' : line.type === 'del' ? '-' : ' '}</span>
+				<div class="diff-line group flex hover:bg-hover/20 relative {lineBg(line.type)}">
+					<button class="absolute left-0 top-0 w-5 h-full flex items-center justify-center opacity-0 group-hover:opacity-100 text-accent-blue z-10 transition-opacity" onclick={() => startComment(lineNum, side, line.content)} title="Add comment">+</button>
+					<span class="w-12 shrink-0 text-right pr-2 text-faint select-none text-xs leading-6 pl-5">{line.oldNumber ?? ''}</span>
+					<span class="w-12 shrink-0 text-right pr-2 text-faint select-none text-xs leading-6 border-r border-border">{line.newNumber ?? ''}</span>
+					<span class="w-6 shrink-0 text-center select-none leading-6 {line.type === 'add' ? 'text-accent-green' : line.type === 'del' ? 'text-accent-red' : ''}">{line.type === 'add' ? '+' : line.type === 'del' ? '-' : ' '}</span>
 					<span class="flex-1 whitespace-pre-wrap break-all leading-6 pr-4">{#if line.html}{@html line.html}{:else}{line.content || ' '}{/if}</span>
 				</div>
 				{#each lineThreads as thread}<CommentThread {thread} />{/each}
@@ -204,10 +204,10 @@
 			<!-- Expanded lines after hunk -->
 			{#each afterLines as line}
 				{@const lineNum = line.newNumber || line.oldNumber || 0}
-				<div class="diff-line group flex hover:bg-zinc-700/20 relative">
-					<button class="absolute left-0 top-0 w-5 h-full flex items-center justify-center opacity-0 group-hover:opacity-100 text-blue-400 hover:text-blue-300 z-10 transition-opacity" onclick={() => startComment(lineNum, 'new', line.content)} title="Add comment">+</button>
-					<span class="w-12 shrink-0 text-right pr-2 text-zinc-600 select-none text-xs leading-6 pl-5">{line.oldNumber ?? ''}</span>
-					<span class="w-12 shrink-0 text-right pr-2 text-zinc-600 select-none text-xs leading-6 border-r border-zinc-700">{line.newNumber ?? ''}</span>
+				<div class="diff-line group flex hover:bg-hover/20 relative">
+					<button class="absolute left-0 top-0 w-5 h-full flex items-center justify-center opacity-0 group-hover:opacity-100 text-accent-blue z-10 transition-opacity" onclick={() => startComment(lineNum, 'new', line.content)} title="Add comment">+</button>
+					<span class="w-12 shrink-0 text-right pr-2 text-faint select-none text-xs leading-6 pl-5">{line.oldNumber ?? ''}</span>
+					<span class="w-12 shrink-0 text-right pr-2 text-faint select-none text-xs leading-6 border-r border-border">{line.newNumber ?? ''}</span>
 					<span class="w-6 shrink-0 text-center select-none leading-6"> </span>
 					<span class="flex-1 whitespace-pre-wrap break-all leading-6 pr-4">{#if line.html}{@html line.html}{:else}{line.content || ' '}{/if}</span>
 				</div>
@@ -215,9 +215,9 @@
 
 			<!-- Expand down button below hunk content -->
 			{#if canExpandAfter(hunkIndex)}
-				<div class="flex items-center border-b border-zinc-700/50 bg-zinc-800/30 hover:bg-zinc-800/60 transition-colors">
+				<div class="flex items-center border-b border-border/50 bg-panel/30 hover:bg-panel/60 transition-colors">
 					<button
-						class="text-blue-400 hover:text-blue-300 transition-colors px-3 py-0.5 flex items-center gap-2 text-xs"
+						class="text-accent-blue hover:opacity-75 transition-colors px-3 py-0.5 flex items-center gap-2 text-xs"
 						onclick={() => expandAfter(hunkIndex)}
 						title="Show {EXPAND_COUNT} more lines below"
 					>
@@ -233,16 +233,16 @@
 			<!-- Expanded before -->
 			{#each beforeLines as line}
 				<div class="flex">
-					<div class="w-1/2 border-r border-zinc-700">
+					<div class="w-1/2 border-r border-border">
 						<div class="diff-line flex leading-6">
-							<span class="w-12 shrink-0 text-right pr-2 text-zinc-600 select-none text-xs leading-6 pl-5">{line.oldNumber ?? ''}</span>
+							<span class="w-12 shrink-0 text-right pr-2 text-faint select-none text-xs leading-6 pl-5">{line.oldNumber ?? ''}</span>
 							<span class="w-6 shrink-0 text-center select-none leading-6"> </span>
 							<span class="flex-1 whitespace-pre-wrap break-all leading-6 pr-2">{#if line.html}{@html line.html}{:else}{line.content || ' '}{/if}</span>
 						</div>
 					</div>
 					<div class="w-1/2">
 						<div class="diff-line flex leading-6">
-							<span class="w-12 shrink-0 text-right pr-2 text-zinc-600 select-none text-xs leading-6 pl-5">{line.newNumber ?? ''}</span>
+							<span class="w-12 shrink-0 text-right pr-2 text-faint select-none text-xs leading-6 pl-5">{line.newNumber ?? ''}</span>
 							<span class="w-6 shrink-0 text-center select-none leading-6"> </span>
 							<span class="flex-1 whitespace-pre-wrap break-all leading-6 pr-2">{#if line.html}{@html line.html}{:else}{line.content || ' '}{/if}</span>
 						</div>
@@ -256,30 +256,30 @@
 				{@const oldThreads = pair.old ? getThreadsForLine(pair.old.oldNumber!, 'old') : []}
 				{@const newThreads = pair.new ? getThreadsForLine(pair.new.newNumber!, 'new') : []}
 				<div class="flex">
-					<div class="w-1/2 border-r border-zinc-700">
+					<div class="w-1/2 border-r border-border">
 						{#if pair.old}
-							<div class="diff-line group flex hover:bg-zinc-700/20 relative {pair.old.type === 'del' ? 'bg-red-950/40' : ''}">
-								<button class="absolute left-0 top-0 w-5 h-full flex items-center justify-center opacity-0 group-hover:opacity-100 text-blue-400 hover:text-blue-300 z-10 transition-opacity" onclick={() => startComment(pair.old!.oldNumber!, 'old', pair.old!.content)} title="Add comment">+</button>
-								<span class="w-12 shrink-0 text-right pr-2 text-zinc-600 select-none text-xs leading-6 pl-5">{pair.old.oldNumber ?? ''}</span>
-								<span class="w-6 shrink-0 text-center select-none leading-6 {pair.old.type === 'del' ? 'text-red-400' : ''}">{pair.old.type === 'del' ? '-' : ' '}</span>
+							<div class="diff-line group flex hover:bg-hover/20 relative {pair.old.type === 'del' ? 'bg-diff-del' : ''}">
+								<button class="absolute left-0 top-0 w-5 h-full flex items-center justify-center opacity-0 group-hover:opacity-100 text-accent-blue z-10 transition-opacity" onclick={() => startComment(pair.old!.oldNumber!, 'old', pair.old!.content)} title="Add comment">+</button>
+								<span class="w-12 shrink-0 text-right pr-2 text-faint select-none text-xs leading-6 pl-5">{pair.old.oldNumber ?? ''}</span>
+								<span class="w-6 shrink-0 text-center select-none leading-6 {pair.old.type === 'del' ? 'text-accent-red' : ''}">{pair.old.type === 'del' ? '-' : ' '}</span>
 								<span class="flex-1 whitespace-pre-wrap break-all leading-6 pr-2">{#if pair.old.html}{@html pair.old.html}{:else}{pair.old.content || ' '}{/if}</span>
 							</div>
-						{:else}<div class="diff-line flex bg-zinc-800/20 leading-6">&nbsp;</div>{/if}
+						{:else}<div class="diff-line flex bg-panel/20 leading-6">&nbsp;</div>{/if}
 					</div>
 					<div class="w-1/2">
 						{#if pair.new}
-							<div class="diff-line group flex hover:bg-zinc-700/20 relative {pair.new.type === 'add' ? 'bg-green-950/40' : ''}">
-								<button class="absolute left-0 top-0 w-5 h-full flex items-center justify-center opacity-0 group-hover:opacity-100 text-blue-400 hover:text-blue-300 z-10 transition-opacity" onclick={() => startComment(pair.new!.newNumber!, 'new', pair.new!.content)} title="Add comment">+</button>
-								<span class="w-12 shrink-0 text-right pr-2 text-zinc-600 select-none text-xs leading-6 pl-5">{pair.new.newNumber ?? ''}</span>
-								<span class="w-6 shrink-0 text-center select-none leading-6 {pair.new.type === 'add' ? 'text-green-400' : ''}">{pair.new.type === 'add' ? '+' : ' '}</span>
+							<div class="diff-line group flex hover:bg-hover/20 relative {pair.new.type === 'add' ? 'bg-diff-add' : ''}">
+								<button class="absolute left-0 top-0 w-5 h-full flex items-center justify-center opacity-0 group-hover:opacity-100 text-accent-blue z-10 transition-opacity" onclick={() => startComment(pair.new!.newNumber!, 'new', pair.new!.content)} title="Add comment">+</button>
+								<span class="w-12 shrink-0 text-right pr-2 text-faint select-none text-xs leading-6 pl-5">{pair.new.newNumber ?? ''}</span>
+								<span class="w-6 shrink-0 text-center select-none leading-6 {pair.new.type === 'add' ? 'text-accent-green' : ''}">{pair.new.type === 'add' ? '+' : ' '}</span>
 								<span class="flex-1 whitespace-pre-wrap break-all leading-6 pr-2">{#if pair.new.html}{@html pair.new.html}{:else}{pair.new.content || ' '}{/if}</span>
 							</div>
-						{:else}<div class="diff-line flex bg-zinc-800/20 leading-6">&nbsp;</div>{/if}
+						{:else}<div class="diff-line flex bg-panel/20 leading-6">&nbsp;</div>{/if}
 					</div>
 				</div>
 				{#if oldThreads.length > 0 || newThreads.length > 0}
 					<div class="flex">
-						<div class="w-1/2 border-r border-zinc-700">
+						<div class="w-1/2 border-r border-border">
 							{#each oldThreads as thread}<CommentThread {thread} />{/each}
 							{#if pair.old && isCommenting(pair.old.oldNumber!, 'old')}<CommentEditor filePath={file.path} lineNumber={pair.old.oldNumber!} side="old" originalLineContent={$commentingLine?.originalLineContent} />{/if}
 						</div>
@@ -294,16 +294,16 @@
 			<!-- Expanded after -->
 			{#each afterLines as line}
 				<div class="flex">
-					<div class="w-1/2 border-r border-zinc-700">
+					<div class="w-1/2 border-r border-border">
 						<div class="diff-line flex leading-6">
-							<span class="w-12 shrink-0 text-right pr-2 text-zinc-600 select-none text-xs leading-6 pl-5">{line.oldNumber ?? ''}</span>
+							<span class="w-12 shrink-0 text-right pr-2 text-faint select-none text-xs leading-6 pl-5">{line.oldNumber ?? ''}</span>
 							<span class="w-6 shrink-0 text-center select-none leading-6"> </span>
 							<span class="flex-1 whitespace-pre-wrap break-all leading-6 pr-2">{#if line.html}{@html line.html}{:else}{line.content || ' '}{/if}</span>
 						</div>
 					</div>
 					<div class="w-1/2">
 						<div class="diff-line flex leading-6">
-							<span class="w-12 shrink-0 text-right pr-2 text-zinc-600 select-none text-xs leading-6 pl-5">{line.newNumber ?? ''}</span>
+							<span class="w-12 shrink-0 text-right pr-2 text-faint select-none text-xs leading-6 pl-5">{line.newNumber ?? ''}</span>
 							<span class="w-6 shrink-0 text-center select-none leading-6"> </span>
 							<span class="flex-1 whitespace-pre-wrap break-all leading-6 pr-2">{#if line.html}{@html line.html}{:else}{line.content || ' '}{/if}</span>
 						</div>
@@ -312,9 +312,9 @@
 			{/each}
 
 			{#if canExpandAfter(hunkIndex)}
-				<div class="flex items-center border-b border-zinc-700/50 bg-zinc-800/30 hover:bg-zinc-800/60 transition-colors">
+				<div class="flex items-center border-b border-border/50 bg-panel/30 hover:bg-panel/60 transition-colors">
 					<button
-						class="text-blue-400 hover:text-blue-300 transition-colors px-3 py-0.5 flex items-center gap-2 text-xs"
+						class="text-accent-blue hover:opacity-75 transition-colors px-3 py-0.5 flex items-center gap-2 text-xs"
 						onclick={() => expandAfter(hunkIndex)}
 						title="Show {EXPAND_COUNT} more lines below"
 					>
