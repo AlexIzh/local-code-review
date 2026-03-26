@@ -67,9 +67,14 @@ PORT=5679 lcr /path/to/other # Second project on port 5679
    - **Request Changes** — sends your review to Claude Code for another iteration
    - **Approve & Commit** — opens commit dialog with approved/all file options
 
+### Diff scope
+
+- **Uncommitted** (default) — shows uncommitted changes vs HEAD
+- **Worktree** — shows the full branch diff (all commits since the branch diverged from main/master/development, plus uncommitted changes)
+
 ### Diff modes
 
-- **Full Diff** — shows all uncommitted changes (staged + unstaged)
+- **Full Diff** — shows all changes in the current scope (staged + unstaged, or full branch)
 - **Needs Review** — shows only unstaged changes, so you can focus on what hasn't been approved yet
 
 ### Export options
