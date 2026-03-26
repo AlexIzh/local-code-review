@@ -1,6 +1,6 @@
 {
 	"name": "local-code-review",
-	"version": "0.1.0",
+	"version": "0.1.1",
 	"description": "Local code review tool — GitHub PR-like diff view with inline comments for AI-assisted development",
 	"type": "module",
 	"bin": {
