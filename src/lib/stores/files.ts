@@ -5,6 +5,7 @@ import { checkOutdated } from './review.ts';
 export type DiffMode = 'full' | 'unstaged';
 
 export const files = writable<FileChange[]>([]);
+export const uncommittedFiles = writable<FileChange[]>([]);
 export const selectedFile = writable<string | null>(null);
 export const diffFiles = writable<DiffFile[]>([]);
 export const loading = writable(false);
@@ -44,6 +45,11 @@ export const approvedCount = derived(files, ($files) => {
 	return { approved, total: $files.length };
 });
 
+export const uncommittedCount = derived(uncommittedFiles, ($uncommittedFiles) => {
+	const approved = $uncommittedFiles.filter((f) => f.approved).length;
+	return { approved, total: $uncommittedFiles.length };
+});
+
 export const diffStats = derived(files, ($files) => {
 	let additions = 0;
 	let deletions = 0;
@@ -75,15 +81,18 @@ export async function loadFiles() {
 	loading.set(true);
 	try {
 		const scope = getStoreValue(diffScope);
-		const url = scope === 'worktree' ? '/api/files?scope=worktree' : '/api/files';
-		const res = await fetch(url);
-		const data = await res.json();
 
 		if (scope === 'worktree') {
+			const res = await fetch('/api/files?scope=worktree');
+			const data = await res.json();
 			files.set(data.files);
 			baseBranch.set(data.baseBranch);
 		} else {
-			files.set(Array.isArray(data) ? data : data.files || []);
+			const res = await fetch('/api/files');
+			const data = await res.json();
+			const fileList = Array.isArray(data) ? data : data.files || [];
+			files.set(fileList);
+			uncommittedFiles.set(fileList);
 			baseBranch.set(null);
 		}
 
@@ -100,6 +109,12 @@ export async function loadFiles() {
 	} finally {
 		loading.set(false);
 	}
+}
+
+export async function loadUncommittedFiles() {
+	const res = await fetch('/api/files');
+	const data = await res.json();
+	uncommittedFiles.set(Array.isArray(data) ? data : []);
 }
 
 export async function loadAllDiffs(mode?: DiffMode) {

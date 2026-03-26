@@ -1,9 +1,14 @@
 <script lang="ts">
 	import { viewMode, showCommitDialog, showExportDialog, theme } from '$lib/stores/ui.ts';
 	import { stats, reviewStatus, submitReview } from '$lib/stores/review.ts';
-	import { diffMode, diffScope, baseBranch, approvedCount, diffStats, loadAllDiffs, setDiffScope } from '$lib/stores/files.ts';
+	import { diffMode, diffScope, baseBranch, approvedCount, uncommittedCount, diffStats, loadAllDiffs, setDiffScope, loadUncommittedFiles } from '$lib/stores/files.ts';
 
 	let showReviewMenu = $state(false);
+
+	function openReviewMenu() {
+		showReviewMenu = !showReviewMenu;
+		if (showReviewMenu) loadUncommittedFiles();
+	}
 
 	async function handleApprove() {
 		await submitReview('approved');
@@ -131,7 +136,7 @@
 	<div class="relative">
 		<button
 			class="text-xs px-3 py-1.5 rounded bg-green-600 text-white hover:bg-green-500 transition-colors"
-			onclick={() => (showReviewMenu = !showReviewMenu)}
+			onclick={openReviewMenu}
 		>
 			Review ▾
 		</button>
@@ -151,10 +156,14 @@
 					<span class="text-accent-yellow mr-2">↻</span> Request Changes (send to AI)
 				</button>
 				<button
-					class="w-full text-left px-3 py-2 text-sm text-secondary hover:bg-hover transition-colors"
+					class="w-full text-left px-3 py-2 text-sm transition-colors {$uncommittedCount.total === 0 ? 'text-muted cursor-not-allowed' : 'text-secondary hover:bg-hover'}"
+					disabled={$uncommittedCount.total === 0}
 					onclick={() => { handleApprove(); showReviewMenu = false; }}
 				>
 					<span class="text-accent-green mr-2">✓</span> Approve & Commit
+					{#if $uncommittedCount.total === 0}
+						<span class="text-xs text-muted ml-1">(no uncommitted changes)</span>
+					{/if}
 				</button>
 			</div>
 		{/if}

@@ -36,13 +36,15 @@ export const POST: RequestHandler = async ({ request }) => {
 		if (action === 'approve') {
 			if (isWorktree) {
 				approveWorktreeFile(path);
+			} else {
+				await stageFile(path);
 			}
-			await stageFile(path);
 		} else if (action === 'unapprove') {
 			if (isWorktree) {
 				unapproveWorktreeFile(path);
+			} else {
+				await unstageFile(path);
 			}
-			await unstageFile(path);
 		} else if (action === 'reset') {
 			await resetFile(path);
 		} else if (action === 'reset-hunk') {
