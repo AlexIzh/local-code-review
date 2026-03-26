@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { viewMode, showCommitDialog, showExportDialog, theme } from '$lib/stores/ui.ts';
 	import { stats, reviewStatus, submitReview } from '$lib/stores/review.ts';
-	import { diffMode, approvedCount, diffStats, loadAllDiffs } from '$lib/stores/files.ts';
+	import { diffMode, diffScope, baseBranch, approvedCount, diffStats, loadAllDiffs, setDiffScope } from '$lib/stores/files.ts';
 
 	let showReviewMenu = $state(false);
 
@@ -37,6 +37,23 @@
 			onclick={() => ($viewMode = 'split')}
 		>
 			Split
+		</button>
+	</div>
+
+	<!-- Diff scope toggle -->
+	<div class="flex bg-surface rounded overflow-hidden border border-border">
+		<button
+			class="text-xs px-3 py-1 transition-colors {$diffScope === 'uncommitted' ? 'bg-active text-white' : 'text-tertiary hover:text-primary'}"
+			onclick={() => setDiffScope('uncommitted')}
+		>
+			Uncommitted
+		</button>
+		<button
+			class="text-xs px-3 py-1 transition-colors {$diffScope === 'worktree' ? 'bg-active text-white' : 'text-tertiary hover:text-primary'}"
+			onclick={() => setDiffScope('worktree')}
+			title={$baseBranch ? `Comparing against ${$baseBranch}` : 'Show all branch changes'}
+		>
+			Worktree
 		</button>
 	</div>
 

@@ -6,7 +6,7 @@
 	import CommitDialog from '$lib/components/CommitDialog.svelte';
 	import ExportDialog from '$lib/components/ExportDialog.svelte';
 	import TerminalPanel from '$lib/components/TerminalPanel.svelte';
-	import { files, selectedFile, selectedDiff, selectedFileData, loadFiles, loadAllDiffs, toggleApproval } from '$lib/stores/files.ts';
+	import { files, selectedFile, selectedDiff, selectedFileData, loadFiles, loadAllDiffs, toggleApproval, diffScope } from '$lib/stores/files.ts';
 	import { loadComments } from '$lib/stores/review.ts';
 	import { sidebarOpen } from '$lib/stores/ui.ts';
 	import { toggleTerminal } from '$lib/stores/terminal.ts';
@@ -113,8 +113,13 @@
 				<div class="flex items-center justify-center h-full text-muted">
 					<div class="text-center">
 						<div class="text-4xl mb-3">✨</div>
-						<p class="font-medium text-secondary">No uncommitted changes</p>
-						<p class="text-sm mt-1">Make some changes and come back to review them</p>
+						{#if $diffScope === 'worktree'}
+							<p class="font-medium text-secondary">No changes on this branch</p>
+							<p class="text-sm mt-1">Commits and uncommitted changes relative to the base branch will appear here</p>
+						{:else}
+							<p class="font-medium text-secondary">No uncommitted changes</p>
+							<p class="text-sm mt-1">Make some changes and come back to review them</p>
+						{/if}
 					</div>
 				</div>
 			{:else if $selectedDiff}

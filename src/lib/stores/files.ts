@@ -1,5 +1,5 @@
 import { writable, derived } from 'svelte/store';
-import type { FileChange, DiffFile } from '$lib/types/index.ts';
+import type { FileChange, DiffFile, DiffScope } from '$lib/types/index.ts';
 import { checkOutdated } from './review.ts';
 
 export type DiffMode = 'full' | 'unstaged';
@@ -9,6 +9,8 @@ export const selectedFile = writable<string | null>(null);
 export const diffFiles = writable<DiffFile[]>([]);
 export const loading = writable(false);
 export const diffMode = writable<DiffMode>('full');
+export const diffScope = writable<DiffScope>('uncommitted');
+export const baseBranch = writable<string | null>(null);
 
 export const selectedDiff = derived([diffFiles, selectedFile], ([$diffFiles, $selectedFile]) => {
 	if (!$selectedFile) return null;
@@ -63,21 +65,37 @@ export const selectedFileData = derived([files, selectedFile], ([$files, $select
 	return $files.find((f) => f.path === $selectedFile) || null;
 });
 
+function getStoreValue<T>(store: { subscribe: (fn: (v: T) => void) => () => void }): T {
+	let value: T;
+	store.subscribe((v) => (value = v))();
+	return value!;
+}
+
 export async function loadFiles() {
 	loading.set(true);
 	try {
-		const res = await fetch('/api/files');
+		const scope = getStoreValue(diffScope);
+		const url = scope === 'worktree' ? '/api/files?scope=worktree' : '/api/files';
+		const res = await fetch(url);
 		const data = await res.json();
-		files.set(data);
+
+		if (scope === 'worktree') {
+			files.set(data.files);
+			baseBranch.set(data.baseBranch);
+		} else {
+			files.set(Array.isArray(data) ? data : data.files || []);
+			baseBranch.set(null);
+		}
 
 		// Auto-select first file
-		if (data.length > 0) {
-			const current = await new Promise<string | null>((resolve) => {
-				selectedFile.subscribe((v) => resolve(v))();
-			});
-			if (!current) {
-				selectedFile.set(data[0].path);
+		const fileList = getStoreValue(files);
+		if (fileList.length > 0) {
+			const current = getStoreValue(selectedFile);
+			if (!current || !fileList.find((f) => f.path === current)) {
+				selectedFile.set(fileList[0].path);
 			}
+		} else {
+			selectedFile.set(null);
 		}
 	} finally {
 		loading.set(false);
@@ -85,16 +103,23 @@ export async function loadFiles() {
 }
 
 export async function loadAllDiffs(mode?: DiffMode) {
-	const currentMode = mode || await new Promise<DiffMode>((resolve) => {
-		diffMode.subscribe((v) => resolve(v))();
-	});
-	const res = await fetch(`/api/diff?mode=${currentMode}`);
+	const currentMode = mode || getStoreValue(diffMode);
+	const currentScope = getStoreValue(diffScope);
+	const res = await fetch(`/api/diff?mode=${currentMode}&scope=${currentScope}`);
 	const data = await res.json();
 	if (data.files) {
 		diffFiles.set(data.files);
 	}
 	// Check if any comment threads are outdated after refreshing diff
 	checkOutdated().catch(() => {});
+}
+
+export async function setDiffScope(scope: DiffScope) {
+	diffScope.set(scope);
+	// Reset to full diff mode when switching scope
+	diffMode.set('full');
+	await loadFiles();
+	await loadAllDiffs('full');
 }
 
 export async function approveFile(path: string) {

@@ -1,9 +1,21 @@
 import { json } from '@sveltejs/kit';
-import { getStatus, stageFile, unstageFile, resetFile, resetHunk } from '$lib/server/git.ts';
+import { getStatus, getWorktreeStatus, getBaseBranchInfo, stageFile, unstageFile, resetFile, resetHunk, clearBaseBranchCache } from '$lib/server/git.ts';
+import type { DiffScope } from '$lib/types/index.ts';
 import type { RequestHandler } from './$types.ts';
 
-export const GET: RequestHandler = async () => {
+export const GET: RequestHandler = async ({ url }) => {
 	try {
+		const scope = (url.searchParams.get('scope') || 'uncommitted') as DiffScope;
+
+		if (scope === 'worktree') {
+			clearBaseBranchCache();
+			const [files, branchInfo] = await Promise.all([
+				getWorktreeStatus(),
+				getBaseBranchInfo()
+			]);
+			return json({ files, baseBranch: branchInfo.baseBranch, mergeBase: branchInfo.mergeBase });
+		}
+
 		const files = await getStatus();
 		return json(files);
 	} catch (err) {
