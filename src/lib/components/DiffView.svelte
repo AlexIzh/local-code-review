@@ -3,6 +3,7 @@
 	import type { ReviewThread } from '$lib/types/index.ts';
 	import { viewMode, commentingLine } from '$lib/stores/ui.ts';
 	import { threadsByFile } from '$lib/stores/review.ts';
+	import { resetHunk } from '$lib/stores/files.ts';
 	import CommentEditor from './CommentEditor.svelte';
 	import CommentThread from './CommentThread.svelte';
 
@@ -169,6 +170,13 @@
 					</button>
 				{/if}
 				<span class="flex-1 px-2 py-1">{hunk.header}</span>
+				<button
+					class="text-accent-red/60 hover:text-accent-red hover:bg-hover transition-colors px-2 py-1 text-xs"
+					onclick={() => resetHunk(file.path, hunk.header)}
+					title="Reset this change block"
+				>
+					↩ Reset
+				</button>
 			</div>
 		{/if}
 

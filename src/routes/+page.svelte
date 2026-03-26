@@ -13,6 +13,29 @@
 
 	let loading = $state(true);
 	let error = $state<string | null>(null);
+	let sidebarWidth = $state(288); // 18rem default
+	let isResizingSidebar = $state(false);
+
+	function startSidebarResize(e: MouseEvent) {
+		e.preventDefault();
+		isResizingSidebar = true;
+		const startX = e.clientX;
+		const startWidth = sidebarWidth;
+
+		function onMouseMove(e: MouseEvent) {
+			const newWidth = startWidth + (e.clientX - startX);
+			sidebarWidth = Math.max(200, Math.min(600, newWidth));
+		}
+
+		function onMouseUp() {
+			isResizingSidebar = false;
+			window.removeEventListener('mousemove', onMouseMove);
+			window.removeEventListener('mouseup', onMouseUp);
+		}
+
+		window.addEventListener('mousemove', onMouseMove);
+		window.addEventListener('mouseup', onMouseUp);
+	}
 
 	onMount(async () => {
 		try {
@@ -59,8 +82,14 @@
 	<div class="flex-1 flex overflow-hidden">
 		<!-- Sidebar -->
 		{#if $sidebarOpen}
-			<aside class="w-72 shrink-0 bg-panel/50 border-r border-border overflow-hidden flex flex-col">
+			<aside class="shrink-0 bg-panel/50 border-r border-border overflow-hidden flex flex-col relative" style="width: {sidebarWidth}px">
 				<FileTree />
+				<!-- Resize handle -->
+				<!-- svelte-ignore a11y_no_static_element_interactions -->
+				<div
+					class="absolute top-0 right-0 w-1 h-full cursor-col-resize hover:bg-accent-blue/50 transition-colors {isResizingSidebar ? 'bg-accent-blue/50' : ''}"
+					onmousedown={startSidebarResize}
+				></div>
 			</aside>
 		{/if}
 

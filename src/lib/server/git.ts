@@ -45,11 +45,12 @@ export async function getStatus(): Promise<FileChange[]> {
 	for (const f of status.renamed) {
 		addFile(f.to, 'renamed', false, f.from);
 	}
-	// Mark staged files
+	// Mark staged files as both staged and approved
 	for (const f of status.staged) {
 		const existing = files.find((x) => x.path === f);
 		if (existing) {
 			existing.staged = true;
+			existing.approved = true;
 		}
 	}
 
@@ -341,6 +342,51 @@ export async function unstageFile(filePath: string): Promise<void> {
 export async function stageAll(): Promise<void> {
 	const g = getGit();
 	await g.add('-A');
+}
+
+export async function resetFile(filePath: string): Promise<void> {
+	const g = getGit();
+	const status = await g.status();
+
+	// Check if it's an untracked/new file
+	if (status.not_added.includes(filePath) || status.created.includes(filePath)) {
+		// Remove the file
+		const { unlink } = await import('fs/promises');
+		const { join } = await import('path');
+		await unlink(join(getRepoDir(), filePath));
+		// If it was staged, also remove from index
+		if (status.created.includes(filePath)) {
+			await g.raw(['rm', '--cached', filePath]);
+		}
+	} else {
+		// Modified or deleted file: restore to HEAD version
+		await g.checkout(['HEAD', '--', filePath]);
+	}
+}
+
+export async function resetHunk(filePath: string, hunkHeader: string): Promise<void> {
+	const g = getGit();
+	// Get the full diff for this file, then construct a reverse patch for just this hunk
+	const diff = await g.diff(['HEAD', '--', filePath]);
+	const hunks = diff.split(/(?=^@@)/m);
+	const fileHeader = hunks[0] || '';
+
+	// Find the matching hunk
+	const targetHunk = hunks.find((h) => h.startsWith(hunkHeader));
+	if (!targetHunk) return;
+
+	// Build a patch with just this hunk and apply in reverse
+	const patch = fileHeader + targetHunk;
+	const { writeFile, unlink } = await import('fs/promises');
+	const { join } = await import('path');
+	const { tmpdir } = await import('os');
+	const patchFile = join(tmpdir(), `lcr-patch-${Date.now()}.patch`);
+	await writeFile(patchFile, patch);
+	try {
+		await g.raw(['apply', '--reverse', patchFile]);
+	} finally {
+		await unlink(patchFile).catch(() => {});
+	}
 }
 
 export async function commitStaged(message: string): Promise<string> {

@@ -16,6 +16,26 @@ export const selectedDiff = derived([diffFiles, selectedFile], ([$diffFiles, $se
 });
 
 export const fileCommentCounts = writable<Record<string, number>>({});
+export const contextFiles = writable<string[]>([]);
+
+export async function loadContextFiles() {
+	const res = await fetch('/api/context-files');
+	const data = await res.json();
+	if (data.files) contextFiles.set(data.files);
+}
+
+export async function toggleContextFile(path: string) {
+	let current: string[] = [];
+	contextFiles.subscribe((v) => (current = v))();
+	const isContext = current.includes(path);
+	const res = await fetch('/api/context-files', {
+		method: 'POST',
+		headers: { 'Content-Type': 'application/json' },
+		body: JSON.stringify({ path, action: isContext ? 'remove' : 'add' })
+	});
+	const data = await res.json();
+	if (data.files) contextFiles.set(data.files);
+}
 
 export const approvedCount = derived(files, ($files) => {
 	const approved = $files.filter((f) => f.approved).length;
@@ -96,6 +116,40 @@ export async function unapproveFile(path: string) {
 		method: 'POST',
 		headers: { 'Content-Type': 'application/json' },
 		body: JSON.stringify({ path, action: 'unapprove' })
+	});
+	const data = await res.json();
+	if (Array.isArray(data)) {
+		files.set(data);
+		await loadAllDiffs();
+	}
+}
+
+export async function resetFile(path: string) {
+	const res = await fetch('/api/files', {
+		method: 'POST',
+		headers: { 'Content-Type': 'application/json' },
+		body: JSON.stringify({ path, action: 'reset' })
+	});
+	const data = await res.json();
+	if (Array.isArray(data)) {
+		files.set(data);
+		await loadAllDiffs();
+		// If the reset file was selected and is now gone, select another
+		const currentSelected = await new Promise<string | null>((resolve) => {
+			selectedFile.subscribe((v) => resolve(v))();
+		});
+		if (currentSelected === path) {
+			const remaining = data as FileChange[];
+			selectedFile.set(remaining.length > 0 ? remaining[0].path : null);
+		}
+	}
+}
+
+export async function resetHunk(path: string, hunkHeader: string) {
+	const res = await fetch('/api/files', {
+		method: 'POST',
+		headers: { 'Content-Type': 'application/json' },
+		body: JSON.stringify({ path, action: 'reset-hunk', hunkHeader })
 	});
 	const data = await res.json();
 	if (Array.isArray(data)) {

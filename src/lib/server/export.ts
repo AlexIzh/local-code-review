@@ -2,8 +2,9 @@ import { writeFile } from 'fs/promises';
 import { join } from 'path';
 import { spawn } from 'child_process';
 import type { ReviewExport, ReviewExportFile, ReviewExportThread } from '$lib/types/index.ts';
+import { readFile } from 'fs/promises';
 import { getRepoDir, getRepoInfo, getStatus, getFileContent } from './git.ts';
-import { getReview, getThreads } from './review-store.ts';
+import { getReview, getThreads, getContextFiles } from './review-store.ts';
 
 export async function buildExport(): Promise<ReviewExport> {
 	const { branch, repoName } = await getRepoInfo();
@@ -126,7 +127,7 @@ export async function exportToClaude(): Promise<{ success: boolean; message: str
 		return { success: false, message: 'No review comments to send. Add comments first.' };
 	}
 
-	const prompt = buildClaudePrompt(data);
+	const prompt = await buildClaudePrompt(data);
 	const claudePath = findClaude();
 
 	return new Promise((resolve) => {
@@ -168,7 +169,7 @@ export async function exportToClaude(): Promise<{ success: boolean; message: str
 	});
 }
 
-export function buildClaudePrompt(data: ReviewExport): string {
+export async function buildClaudePrompt(data: ReviewExport): Promise<string> {
 	const lines: string[] = [
 		'I have completed a code review of the current changes. Please address each review comment below by making the necessary changes to the codebase.',
 		''
@@ -189,6 +190,22 @@ export function buildClaudePrompt(data: ReviewExport): string {
 				lines.push(`  [${comment.type.toUpperCase()}]: ${comment.body}`);
 			}
 			lines.push('');
+		}
+	}
+
+	// Include context files for additional reference
+	const contextFilePaths = getContextFiles();
+	if (contextFilePaths.length > 0) {
+		lines.push('', '--- Additional Context Files ---', '');
+		lines.push('The following files are provided as additional context for your reference when making changes:', '');
+		const repoDir = getRepoDir();
+		for (const filePath of contextFilePaths) {
+			try {
+				const content = await readFile(join(repoDir, filePath), 'utf-8');
+				lines.push(`File: ${filePath}`, '```', content, '```', '');
+			} catch {
+				lines.push(`File: ${filePath} (could not read)`, '');
+			}
 		}
 	}
 

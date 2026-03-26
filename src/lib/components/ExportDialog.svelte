@@ -4,13 +4,40 @@
 
 	let exporting = $state(false);
 	let result = $state<{ success: boolean; path?: string; message?: string; text?: string } | null>(null);
+	let clipboardState = $state<'idle' | 'loading' | 'ready' | 'copied'>('idle');
+	let pendingClipboardText = $state<string | null>(null);
 
 	async function exportAs(format: string) {
+		if (format === 'clipboard') {
+			clipboardState = 'loading';
+			pendingClipboardText = null;
+			try {
+				const res = await fetch('/api/export', {
+					method: 'POST',
+					headers: { 'Content-Type': 'application/json' },
+					body: JSON.stringify({ format })
+				});
+				const data = await res.json();
+				if (data?.text) {
+					pendingClipboardText = data.text;
+					// Ensure "Preparing..." is visible long enough for user to notice
+					await new Promise((r) => setTimeout(r, 800));
+					clipboardState = 'ready';
+				} else {
+					result = { success: false, message: 'No content to copy.' };
+					clipboardState = 'idle';
+				}
+			} catch (err) {
+				result = { success: false, message: String(err) };
+				clipboardState = 'idle';
+			}
+			return;
+		}
+
 		exporting = true;
 		result = null;
 		try {
 			if (format === 'claude') {
-				// Use terminal panel with streaming
 				const res = await sendReviewToClaude();
 				if (res.success) {
 					$showExportDialog = false;
@@ -26,16 +53,33 @@
 				body: JSON.stringify({ format })
 			});
 			result = await res.json();
-
-			if (format === 'clipboard' && result?.text) {
-				await navigator.clipboard.writeText(result.text);
-				result = { success: true, message: 'Copied to clipboard!' };
-			}
 		} catch (err) {
 			result = { success: false, message: String(err) };
 		} finally {
 			exporting = false;
 		}
+	}
+
+	function copyNow() {
+		if (!pendingClipboardText) return;
+		navigator.clipboard.writeText(pendingClipboardText).then(() => {
+			clipboardState = 'copied';
+			pendingClipboardText = null;
+			setTimeout(() => { clipboardState = 'idle'; }, 2000);
+		}).catch(() => {
+			const textarea = document.createElement('textarea');
+			textarea.value = pendingClipboardText!;
+			textarea.style.position = 'fixed';
+			textarea.style.left = '-9999px';
+			document.body.appendChild(textarea);
+			textarea.focus();
+			textarea.select();
+			document.execCommand('copy');
+			document.body.removeChild(textarea);
+			clipboardState = 'copied';
+			pendingClipboardText = null;
+			setTimeout(() => { clipboardState = 'idle'; }, 2000);
+		});
 	}
 
 	function close() {
@@ -67,12 +111,28 @@
 				</button>
 
 				<button
-					class="w-full text-left px-4 py-3 rounded-lg border border-border-strong hover:bg-hover/50 transition-colors group"
-					onclick={() => exportAs('clipboard')}
-					disabled={exporting}
+					class="w-full text-left px-4 py-3 rounded-lg border transition-all {clipboardState === 'ready' ? 'border-accent-blue bg-accent-blue/10 ring-1 ring-accent-blue/30' : clipboardState === 'copied' ? 'border-accent-green bg-accent-green/10' : 'border-border-strong hover:bg-hover/50'} group"
+					onclick={() => clipboardState === 'ready' ? copyNow() : exportAs('clipboard')}
+					disabled={exporting || clipboardState === 'loading'}
 				>
-					<div class="text-sm font-medium text-primary group-hover:opacity-80">Copy to Clipboard</div>
-					<div class="text-xs text-tertiary mt-0.5">Copy structured review text for any AI tool</div>
+					{#if clipboardState === 'loading'}
+						<div class="text-sm font-medium text-primary flex items-center gap-2">
+							<span class="animate-spin">⏳</span> Preparing content...
+						</div>
+						<div class="text-xs text-tertiary mt-0.5">Generating review text</div>
+					{:else if clipboardState === 'ready'}
+						<div class="text-sm font-medium text-accent-blue flex items-center gap-2">
+							📋 Content ready — click to copy
+						</div>
+						<div class="text-xs text-accent-blue/70 mt-0.5">Click now to copy to clipboard</div>
+					{:else if clipboardState === 'copied'}
+						<div class="text-sm font-medium text-accent-green flex items-center gap-2">
+							✓ Copied to clipboard!
+						</div>
+					{:else}
+						<div class="text-sm font-medium text-primary group-hover:opacity-80">Copy to Clipboard</div>
+						<div class="text-xs text-tertiary mt-0.5">Copy structured review text for any AI tool</div>
+					{/if}
 				</button>
 
 				<button

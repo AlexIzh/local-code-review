@@ -1,5 +1,5 @@
 import { json } from '@sveltejs/kit';
-import { getStatus, stageFile, unstageFile } from '$lib/server/git.ts';
+import { getStatus, stageFile, unstageFile, resetFile, resetHunk } from '$lib/server/git.ts';
 import type { RequestHandler } from './$types.ts';
 
 export const GET: RequestHandler = async () => {
@@ -24,6 +24,12 @@ export const POST: RequestHandler = async ({ request }) => {
 			await stageFile(path);
 		} else if (action === 'unapprove') {
 			await unstageFile(path);
+		} else if (action === 'reset') {
+			await resetFile(path);
+		} else if (action === 'reset-hunk') {
+			const { hunkHeader } = body;
+			if (!hunkHeader) return json({ error: 'Missing hunkHeader' }, { status: 400 });
+			await resetHunk(path, hunkHeader);
 		} else {
 			return json({ error: 'Unknown action' }, { status: 400 });
 		}

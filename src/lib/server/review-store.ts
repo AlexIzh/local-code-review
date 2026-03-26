@@ -4,6 +4,19 @@ import { randomUUID } from 'crypto';
 const threads = new Map<string, ReviewThread>();
 let reviewStatus: 'pending' | 'approved' | 'changes_requested' = 'pending';
 let reviewSummary: string | undefined;
+const contextFiles = new Set<string>();
+
+export function addContextFile(filePath: string): void {
+	contextFiles.add(filePath);
+}
+
+export function removeContextFile(filePath: string): void {
+	contextFiles.delete(filePath);
+}
+
+export function getContextFiles(): string[] {
+	return Array.from(contextFiles);
+}
 
 export function addComment(
 	filePath: string,
@@ -101,6 +114,7 @@ export function clearAll(): void {
 	threads.clear();
 	reviewStatus = 'pending';
 	reviewSummary = undefined;
+	contextFiles.clear();
 }
 
 export function markOutdated(threadId: string, outdated: boolean): boolean {
