@@ -5,6 +5,7 @@ const threads = new Map<string, ReviewThread>();
 let reviewStatus: 'pending' | 'approved' | 'changes_requested' = 'pending';
 let reviewSummary: string | undefined;
 const contextFiles = new Set<string>();
+const worktreeApprovals = new Set<string>();
 
 export function addContextFile(filePath: string): void {
 	contextFiles.add(filePath);
@@ -110,11 +111,24 @@ export function setReviewSummary(summary: string): void {
 	reviewSummary = summary;
 }
 
+export function approveWorktreeFile(filePath: string): void {
+	worktreeApprovals.add(filePath);
+}
+
+export function unapproveWorktreeFile(filePath: string): void {
+	worktreeApprovals.delete(filePath);
+}
+
+export function getWorktreeApprovals(): Set<string> {
+	return worktreeApprovals;
+}
+
 export function clearAll(): void {
 	threads.clear();
 	reviewStatus = 'pending';
 	reviewSummary = undefined;
 	contextFiles.clear();
+	worktreeApprovals.clear();
 }
 
 export function markOutdated(threadId: string, outdated: boolean): boolean {

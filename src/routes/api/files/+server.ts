@@ -1,5 +1,6 @@
 import { json } from '@sveltejs/kit';
-import { getStatus, getWorktreeStatus, getBaseBranchInfo, stageFile, unstageFile, resetFile, resetHunk, clearBaseBranchCache } from '$lib/server/git.ts';
+import { getStatus, getWorktreeStatus, getBaseBranchInfo, stageFile, unstageFile, resetFile, resetHunk } from '$lib/server/git.ts';
+import { approveWorktreeFile, unapproveWorktreeFile } from '$lib/server/review-store.ts';
 import type { DiffScope } from '$lib/types/index.ts';
 import type { RequestHandler } from './$types.ts';
 
@@ -8,11 +9,9 @@ export const GET: RequestHandler = async ({ url }) => {
 		const scope = (url.searchParams.get('scope') || 'uncommitted') as DiffScope;
 
 		if (scope === 'worktree') {
-			clearBaseBranchCache();
-			const [files, branchInfo] = await Promise.all([
-				getWorktreeStatus(),
-				getBaseBranchInfo()
-			]);
+			// getWorktreeStatus internally calls getBaseBranchInfo and populates the cache
+			const files = await getWorktreeStatus();
+			const branchInfo = await getBaseBranchInfo();
 			return json({ files, baseBranch: branchInfo.baseBranch, mergeBase: branchInfo.mergeBase });
 		}
 
@@ -26,15 +25,23 @@ export const GET: RequestHandler = async ({ url }) => {
 export const POST: RequestHandler = async ({ request }) => {
 	try {
 		const body = await request.json();
-		const { path, action } = body;
+		const { path, action, scope } = body;
 
 		if (!path || !action) {
 			return json({ error: 'Missing path or action' }, { status: 400 });
 		}
 
+		const isWorktree = scope === 'worktree';
+
 		if (action === 'approve') {
+			if (isWorktree) {
+				approveWorktreeFile(path);
+			}
 			await stageFile(path);
 		} else if (action === 'unapprove') {
+			if (isWorktree) {
+				unapproveWorktreeFile(path);
+			}
 			await unstageFile(path);
 		} else if (action === 'reset') {
 			await resetFile(path);

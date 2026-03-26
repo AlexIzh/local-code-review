@@ -123,71 +123,54 @@ export async function setDiffScope(scope: DiffScope) {
 }
 
 export async function approveFile(path: string) {
-	const res = await fetch('/api/files', {
+	const scope = getStoreValue(diffScope);
+	await fetch('/api/files', {
 		method: 'POST',
 		headers: { 'Content-Type': 'application/json' },
-		body: JSON.stringify({ path, action: 'approve' })
+		body: JSON.stringify({ path, action: 'approve', scope })
 	});
-	const data = await res.json();
-	if (Array.isArray(data)) {
-		files.set(data);
-		// Reload diffs since staging changed
-		await loadAllDiffs();
-	}
+	await loadFiles();
+	await loadAllDiffs();
 }
 
 export async function unapproveFile(path: string) {
-	const res = await fetch('/api/files', {
+	const scope = getStoreValue(diffScope);
+	await fetch('/api/files', {
 		method: 'POST',
 		headers: { 'Content-Type': 'application/json' },
-		body: JSON.stringify({ path, action: 'unapprove' })
+		body: JSON.stringify({ path, action: 'unapprove', scope })
 	});
-	const data = await res.json();
-	if (Array.isArray(data)) {
-		files.set(data);
-		await loadAllDiffs();
-	}
+	await loadFiles();
+	await loadAllDiffs();
 }
 
 export async function resetFile(path: string) {
-	const res = await fetch('/api/files', {
+	await fetch('/api/files', {
 		method: 'POST',
 		headers: { 'Content-Type': 'application/json' },
 		body: JSON.stringify({ path, action: 'reset' })
 	});
-	const data = await res.json();
-	if (Array.isArray(data)) {
-		files.set(data);
-		await loadAllDiffs();
-		// If the reset file was selected and is now gone, select another
-		const currentSelected = await new Promise<string | null>((resolve) => {
-			selectedFile.subscribe((v) => resolve(v))();
-		});
-		if (currentSelected === path) {
-			const remaining = data as FileChange[];
-			selectedFile.set(remaining.length > 0 ? remaining[0].path : null);
-		}
+	await loadFiles();
+	await loadAllDiffs();
+	// If the reset file was selected and is now gone, select another
+	if (getStoreValue(selectedFile) === path) {
+		const remaining = getStoreValue(files);
+		selectedFile.set(remaining.length > 0 ? remaining[0].path : null);
 	}
 }
 
 export async function resetHunk(path: string, hunkHeader: string) {
-	const res = await fetch('/api/files', {
+	await fetch('/api/files', {
 		method: 'POST',
 		headers: { 'Content-Type': 'application/json' },
 		body: JSON.stringify({ path, action: 'reset-hunk', hunkHeader })
 	});
-	const data = await res.json();
-	if (Array.isArray(data)) {
-		files.set(data);
-		await loadAllDiffs();
-	}
+	await loadFiles();
+	await loadAllDiffs();
 }
 
 export async function toggleApproval(path: string) {
-	const currentFiles = await new Promise<FileChange[]>((resolve) => {
-		files.subscribe((v) => resolve(v))();
-	});
-	const file = currentFiles.find((f) => f.path === path);
+	const file = getStoreValue(files).find((f) => f.path === path);
 	if (file?.approved) {
 		await unapproveFile(path);
 	} else {

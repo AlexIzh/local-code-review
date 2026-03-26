@@ -6,7 +6,7 @@
 	import CommitDialog from '$lib/components/CommitDialog.svelte';
 	import ExportDialog from '$lib/components/ExportDialog.svelte';
 	import TerminalPanel from '$lib/components/TerminalPanel.svelte';
-	import { files, selectedFile, selectedDiff, selectedFileData, loadFiles, loadAllDiffs, toggleApproval, diffScope } from '$lib/stores/files.ts';
+	import { files, selectedFile, selectedDiff, selectedFileData, loadFiles, loadAllDiffs, toggleApproval, diffScope, diffMode } from '$lib/stores/files.ts';
 	import { loadComments } from '$lib/stores/review.ts';
 	import { sidebarOpen } from '$lib/stores/ui.ts';
 	import { toggleTerminal } from '$lib/stores/terminal.ts';
@@ -151,6 +151,17 @@
 					{/if}
 				</div>
 				<DiffView file={$selectedDiff} />
+			{:else if $selectedFile}
+				<div class="flex items-center justify-center h-full text-muted">
+					<div class="text-center">
+						<p class="font-mono text-sm text-secondary mb-2">{$selectedFile}</p>
+						{#if $diffMode === 'unstaged'}
+							<p class="text-sm">No unstaged changes in this file</p>
+						{:else}
+							<p class="text-sm">No diff available for this file</p>
+						{/if}
+					</div>
+				</div>
 			{:else}
 				<div class="flex items-center justify-center h-full text-muted">
 					<p class="text-sm">Select a file from the sidebar</p>

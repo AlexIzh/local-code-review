@@ -1,5 +1,6 @@
 import simpleGit, { type SimpleGit } from 'simple-git';
 import type { FileChange, DiffFile, DiffHunk, DiffLine, DiffScope } from '$lib/types/index.ts';
+import { getWorktreeApprovals } from './review-store.ts';
 
 let git: SimpleGit;
 
@@ -458,10 +459,6 @@ async function getUnstagedDiff(filePath?: string): Promise<string> {
 
 let cachedBaseBranchInfo: { baseBranch: string | null; mergeBase: string | null } | null = null;
 
-export function clearBaseBranchCache(): void {
-	cachedBaseBranchInfo = null;
-}
-
 export async function getBaseBranchInfo(): Promise<{ baseBranch: string | null; mergeBase: string | null }> {
 	if (cachedBaseBranchInfo) return cachedBaseBranchInfo;
 
@@ -501,6 +498,22 @@ export async function getBaseBranchInfo(): Promise<{ baseBranch: string | null; 
 			}
 		} catch {
 			// Branch doesn't exist or merge-base failed — skip
+		}
+	}
+
+	// Fallback: try upstream tracking branch
+	if (!bestBranch) {
+		try {
+			const upstream = (await g.raw(['rev-parse', '--abbrev-ref', '@{upstream}'])).trim();
+			// upstream is e.g. "origin/main" — extract the local branch name
+			const localName = upstream.replace(/^[^/]+\//, '');
+			if (localName !== currentBranch) {
+				const mergeBase = (await g.raw(['merge-base', 'HEAD', upstream])).trim();
+				bestBranch = localName;
+				bestMergeBase = mergeBase;
+			}
+		} catch {
+			// No upstream configured — skip
 		}
 	}
 
@@ -550,11 +563,17 @@ export async function getWorktreeStatus(): Promise<FileChange[]> {
 	const { mergeBase } = await getBaseBranchInfo();
 	if (!mergeBase) return getStatus(); // Fallback
 
+	// Run all independent git calls in parallel
+	const [nameStatus, gitStatus, diffStat] = await Promise.all([
+		g.diff(['--name-status', mergeBase]),
+		g.status(),
+		g.diff([mergeBase, '--numstat']).catch(() => '')
+	]);
+
 	const files: FileChange[] = [];
 	const seen = new Set<string>();
 
-	// Get all files changed between merge-base and working tree
-	const nameStatus = await g.diff(['--name-status', mergeBase]);
+	// Parse files changed between merge-base and working tree
 	for (const line of nameStatus.split('\n')) {
 		if (!line.trim()) continue;
 		const match = line.match(/^([AMDRC])\d*\t(.+?)(?:\t(.+))?$/);
@@ -577,38 +596,33 @@ export async function getWorktreeStatus(): Promise<FileChange[]> {
 	}
 
 	// Include untracked files
-	const gitStatus = await g.status();
 	for (const f of gitStatus.not_added) {
 		if (seen.has(f)) continue;
 		seen.add(f);
 		files.push({ path: f, status: 'added', staged: false, approved: false, additions: 0, deletions: 0 });
 	}
 
-	// Merge staging info from git status
+	// Merge staging info from git status + worktree approvals
 	const stagedSet = new Set([...gitStatus.created, ...gitStatus.staged]);
+	const approvals = getWorktreeApprovals();
 	for (const file of files) {
-		if (stagedSet.has(file.path)) {
+		if (stagedSet.has(file.path) || approvals.has(file.path)) {
 			file.staged = true;
 			file.approved = true;
 		}
 	}
 
-	// Get numstat for additions/deletions
-	try {
-		const diffStat = await g.diff([mergeBase, '--numstat']);
-		for (const line of diffStat.split('\n')) {
-			const match = line.match(/^(\d+|-)\t(\d+|-)\t(.+)$/);
-			if (match) {
-				const [, adds, dels, path] = match;
-				const file = files.find((f) => f.path === path);
-				if (file) {
-					file.additions = adds === '-' ? 0 : parseInt(adds, 10);
-					file.deletions = dels === '-' ? 0 : parseInt(dels, 10);
-				}
+	// Apply numstat additions/deletions
+	for (const line of diffStat.split('\n')) {
+		const match = line.match(/^(\d+|-)\t(\d+|-)\t(.+)$/);
+		if (match) {
+			const [, adds, dels, path] = match;
+			const file = files.find((f) => f.path === path);
+			if (file) {
+				file.additions = adds === '-' ? 0 : parseInt(adds, 10);
+				file.deletions = dels === '-' ? 0 : parseInt(dels, 10);
 			}
 		}
-	} catch {
-		// numstat may fail
 	}
 
 	return files;
