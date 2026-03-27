@@ -1,14 +1,14 @@
 import { json } from '@sveltejs/kit';
-import { getDiffByMode, parseDiff, getFileContent } from '$lib/server/git.ts';
+import { getDiffByMode, parseDiff, getFileContent, getBaseBranchInfo } from '$lib/server/git.ts';
 import type { DiffMode } from '$lib/server/git.ts';
-import type { DiffFile } from '$lib/types/index.ts';
+import type { DiffFile, DiffScope } from '$lib/types/index.ts';
 import { highlightLines } from '$lib/server/highlighter.ts';
 import { readFile } from 'fs/promises';
 import { join } from 'path';
 import { getRepoDir } from '$lib/server/git.ts';
 import type { RequestHandler } from './$types.ts';
 
-async function applyHighlighting(files: DiffFile[]): Promise<void> {
+async function applyHighlighting(files: DiffFile[], oldRef: string = 'HEAD'): Promise<void> {
 	for (const file of files) {
 		// Get the full new file content for accurate highlighting
 		let newContent = '';
@@ -22,8 +22,8 @@ async function applyHighlighting(files: DiffFile[]): Promise<void> {
 		}
 
 		try {
-			// Get the HEAD version (old content)
-			oldContent = await getFileContent(file.path);
+			// Get the old version (HEAD or merge-base for worktree scope)
+			oldContent = await getFileContent(file.path, oldRef);
 		} catch {
 			// File might be new
 		}
@@ -82,8 +82,9 @@ export const GET: RequestHandler = async ({ url }) => {
 	try {
 		const filePath = url.searchParams.get('file') || undefined;
 		const mode = (url.searchParams.get('mode') || 'full') as DiffMode;
+		const scope = (url.searchParams.get('scope') || 'uncommitted') as DiffScope;
 		const skipTruncation = url.searchParams.get('full') === '1';
-		const raw = await getDiffByMode(mode, filePath);
+		const raw = await getDiffByMode(mode, filePath, scope);
 		const parsed = parseDiff(raw);
 
 		// Truncate large files before highlighting (unless full load requested)
@@ -98,9 +99,16 @@ export const GET: RequestHandler = async ({ url }) => {
 			}
 		}
 
+		// Determine the old ref for syntax highlighting
+		let oldRef = 'HEAD';
+		if (scope === 'worktree') {
+			const { mergeBase } = await getBaseBranchInfo();
+			if (mergeBase) oldRef = mergeBase;
+		}
+
 		// Skip highlighting for very large files
 		const filesToHighlight = parsed.filter((f) => (f.totalLines || 0) <= MAX_LINES_FOR_HIGHLIGHTING);
-		await applyHighlighting(filesToHighlight);
+		await applyHighlighting(filesToHighlight, oldRef);
 
 		return json({ files: parsed, raw });
 	} catch (err) {

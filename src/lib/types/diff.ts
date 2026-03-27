@@ -33,3 +33,5 @@ export interface DiffLine {
 	oldNumber?: number;
 	newNumber?: number;
 }
+
+export type DiffScope = 'uncommitted' | 'worktree';
