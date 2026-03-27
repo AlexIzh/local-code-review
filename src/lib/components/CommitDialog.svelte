@@ -1,11 +1,18 @@
 <script lang="ts">
 	import { showCommitDialog } from '$lib/stores/ui.ts';
-	import { approvedCount } from '$lib/stores/files.ts';
+	import { uncommittedCount, loadUncommittedFiles } from '$lib/stores/files.ts';
 
 	let message = $state('');
 	let commitMode = $state<'approved' | 'all'>('approved');
 	let committing = $state(false);
 	let result = $state<{ success: boolean; hash?: string; error?: string } | null>(null);
+
+	// Refresh uncommitted file counts when dialog opens
+	$effect(() => {
+		if ($showCommitDialog) {
+			loadUncommittedFiles();
+		}
+	});
 
 	async function handleCommit() {
 		if (!message.trim()) return;
@@ -79,19 +86,19 @@
 								onclick={() => (commitMode = 'approved')}
 							>
 								<div class="font-medium">Approved files only</div>
-								<div class="text-xs mt-0.5 opacity-70">{$approvedCount.approved} of {$approvedCount.total} files</div>
+								<div class="text-xs mt-0.5 opacity-70">{$uncommittedCount.approved} of {$uncommittedCount.total} files</div>
 							</button>
 							<button
 								class="flex-1 text-left px-3 py-2 rounded-lg border text-sm transition-colors {commitMode === 'all' ? 'border-blue-600 bg-accent-blue/10 text-accent-blue' : 'border-border-strong text-tertiary hover:border-border-strong'}"
 								onclick={() => (commitMode = 'all')}
 							>
 								<div class="font-medium">All changes</div>
-								<div class="text-xs mt-0.5 opacity-70">{$approvedCount.total} files</div>
+								<div class="text-xs mt-0.5 opacity-70">{$uncommittedCount.total} files</div>
 							</button>
 						</div>
 					</div>
 
-					{#if commitMode === 'approved' && $approvedCount.approved === 0}
+					{#if commitMode === 'approved' && $uncommittedCount.approved === 0}
 						<div class="text-sm rounded-lg px-3 py-2 bg-accent-yellow/10 text-accent-yellow">
 							No files approved yet. Approve files in the sidebar first, or commit all changes.
 						</div>
@@ -128,10 +135,10 @@
 						</button>
 						<button
 							class="text-sm px-4 py-2 rounded bg-green-600 text-white hover:bg-green-500 transition-colors disabled:opacity-50"
-							disabled={!message.trim() || committing || (commitMode === 'approved' && $approvedCount.approved === 0)}
+							disabled={!message.trim() || committing || (commitMode === 'approved' && $uncommittedCount.approved === 0)}
 							onclick={handleCommit}
 						>
-							{committing ? 'Committing...' : commitMode === 'approved' ? `Commit ${$approvedCount.approved} files` : 'Commit all'}
+							{committing ? 'Committing...' : commitMode === 'approved' ? `Commit ${$uncommittedCount.approved} files` : 'Commit all'}
 						</button>
 					</div>
 				</div>
