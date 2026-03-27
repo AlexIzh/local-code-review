@@ -13,6 +13,8 @@ export interface DiffFile {
 	oldPath?: string;
 	hunks: DiffHunk[];
 	language: string;
+	totalLines?: number;
+	truncated?: boolean;
 }
 
 export interface DiffHunk {

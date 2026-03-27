@@ -49,15 +49,58 @@ async function applyHighlighting(files: DiffFile[]): Promise<void> {
 	}
 }
 
+const MAX_LINES_PER_FILE = 1500;
+const MAX_LINES_FOR_HIGHLIGHTING = 5000;
+
+function truncateLargeFiles(files: DiffFile[]): void {
+	for (const file of files) {
+		let totalLines = 0;
+		for (const hunk of file.hunks) {
+			totalLines += hunk.lines.length;
+		}
+		file.totalLines = totalLines;
+
+		if (totalLines > MAX_LINES_PER_FILE) {
+			file.truncated = true;
+			// Keep only first N lines across hunks
+			let remaining = MAX_LINES_PER_FILE;
+			for (const hunk of file.hunks) {
+				if (remaining <= 0) {
+					hunk.lines = [];
+				} else if (hunk.lines.length > remaining) {
+					hunk.lines = hunk.lines.slice(0, remaining);
+				}
+				remaining -= hunk.lines.length;
+			}
+			// Remove empty hunks
+			file.hunks = file.hunks.filter((h) => h.lines.length > 0);
+		}
+	}
+}
+
 export const GET: RequestHandler = async ({ url }) => {
 	try {
 		const filePath = url.searchParams.get('file') || undefined;
 		const mode = (url.searchParams.get('mode') || 'full') as DiffMode;
+		const skipTruncation = url.searchParams.get('full') === '1';
 		const raw = await getDiffByMode(mode, filePath);
 		const parsed = parseDiff(raw);
 
-		// Apply syntax highlighting
-		await applyHighlighting(parsed);
+		// Truncate large files before highlighting (unless full load requested)
+		if (!skipTruncation) {
+			truncateLargeFiles(parsed);
+		} else {
+			// Still count total lines for display
+			for (const file of parsed) {
+				let totalLines = 0;
+				for (const hunk of file.hunks) totalLines += hunk.lines.length;
+				file.totalLines = totalLines;
+			}
+		}
+
+		// Skip highlighting for very large files
+		const filesToHighlight = parsed.filter((f) => (f.totalLines || 0) <= MAX_LINES_FOR_HIGHLIGHTING);
+		await applyHighlighting(filesToHighlight);
 
 		return json({ files: parsed, raw });
 	} catch (err) {

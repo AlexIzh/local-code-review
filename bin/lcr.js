@@ -36,16 +36,10 @@ const server = createServer(handler);
 
 // Attach WebSocket for terminal
 try {
-	const wsHandler = await import(join(buildPath, 'server', 'chunks', 'ws-handler.js'));
-	wsHandler.attachWebSocket(server);
-} catch {
-	// ws-handler may be bundled differently — try alternative import
-	try {
-		const { attachWebSocket } = await import('../src/lib/server/ws-handler.ts');
-		attachWebSocket(server);
-	} catch (err) {
-		console.warn('  Warning: Could not attach terminal WebSocket:', err.message);
-	}
+	const { attachWebSocket } = await import(join(buildPath, 'ws-handler.js'));
+	attachWebSocket(server);
+} catch (err) {
+	console.warn('  Warning: Terminal not available:', err.message);
 }
 
 server.listen(port, '127.0.0.1', async () => {

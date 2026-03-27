@@ -3,7 +3,7 @@
 	import type { ReviewThread } from '$lib/types/index.ts';
 	import { viewMode, commentingLine } from '$lib/stores/ui.ts';
 	import { threadsByFile } from '$lib/stores/review.ts';
-	import { resetHunk } from '$lib/stores/files.ts';
+	import { resetHunk, diffFiles } from '$lib/stores/files.ts';
 	import CommentEditor from './CommentEditor.svelte';
 	import CommentThread from './CommentThread.svelte';
 
@@ -12,6 +12,23 @@
 	}
 
 	let { file }: Props = $props();
+	let loadingFull = $state(false);
+
+	async function loadFullFile() {
+		loadingFull = true;
+		try {
+			const res = await fetch(`/api/diff?file=${encodeURIComponent(file.path)}&full=1`);
+			const data = await res.json();
+			if (data.files?.[0]) {
+				// Replace this file in the diffFiles store
+				diffFiles.update((files) =>
+					files.map((f) => f.path === file.path ? data.files[0] : f)
+				);
+			}
+		} finally {
+			loadingFull = false;
+		}
+	}
 
 	// Track expanded context lines per hunk boundary
 	let expandedLines = $state<Map<string, DiffLine[]>>(new Map());
@@ -335,6 +352,21 @@
 			{/if}
 		{/if}
 	{/each}
+
+	{#if file.truncated}
+		<div class="bg-panel border-t border-border px-4 py-3 text-center">
+			<p class="text-sm text-muted mb-2">
+				Large file: showing {file.hunks.reduce((s, h) => s + h.lines.length, 0).toLocaleString()} of {(file.totalLines || 0).toLocaleString()} changed lines
+			</p>
+			<button
+				class="text-sm px-4 py-1.5 rounded bg-accent-blue/20 text-accent-blue hover:bg-accent-blue/30 transition-colors disabled:opacity-50"
+				onclick={loadFullFile}
+				disabled={loadingFull}
+			>
+				{loadingFull ? '⏳ Loading...' : 'Load full file (may be slow)'}
+			</button>
+		</div>
+	{/if}
 </div>
 
 <script lang="ts" module>
